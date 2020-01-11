@@ -1,6 +1,6 @@
 CC = g++
 FLAGS = -Wall
-OBJS = main.o
+OBJS = main.o cloth_mesh.o
 PROJECT = cloth_simulator
 
 ${PROJECT}: ${OBJS} clean_emacs_files
