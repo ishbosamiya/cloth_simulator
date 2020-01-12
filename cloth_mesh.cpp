@@ -104,3 +104,141 @@ void ClothMesh::setIndices()
     edges[i]->index = i;
   }
 }
+
+static void getValidLine(istream &in, string &line)
+{
+  do {
+    getline(in, line);
+  } while (in && (line.length() == 0 || line[0] == '#'));
+}
+
+static void connectVertWithNode(ClothVert *vert, ClothNode *node)
+{
+  vert->node = node;
+  include(vert, node->verts);
+}
+
+static double angle(const Vec3 &x0, const Vec3 &x1, const Vec3 &x2)
+{
+  Vec3 e1 = normalize(x1 - x0);
+  Vec3 e2 = normalize(x2 - x0);
+  return acos(clamp(dot(e1, e2), -1., 1.));
+}
+
+static vector<ClothFace *> triangulate(const vector<ClothVert *> &verts)
+{
+  int n = verts.size();
+  double best_min_angle = 0;
+  int best_root = -1;
+  for (int i = 0; i < n; i++) {
+    double min_angle = infinity;
+    const ClothVert *vert0 = verts[i];
+    for (int j = 2; j < n; j++) {
+      const ClothVert *vert1 = verts[(i + j - 1) % n], *vert2 = verts[(i + j) % n];
+      min_angle = min(min_angle,
+                      angle(vert0->node->x, vert1->node->x, vert2->node->x),
+                      angle(vert1->node->x, vert2->node->x, vert0->node->x),
+                      angle(vert2->node->x, vert0->node->x, vert1->node->x));
+    }
+    if (min_angle > best_min_angle) {
+      best_min_angle = min_angle;
+      best_root = i;
+    }
+  }
+  int i = best_root;
+  ClothVert *vert0 = verts[i];
+  vector<ClothFace *> tris;
+  for (int j = 2; j < n; j++) {
+    ClothVert *vert1 = verts[(i + j - 1) % n], *vert2 = verts[(i + j) % n];
+    tris.push_back(new ClothFace(vert0, vert1, vert2));
+  }
+  return tris;
+}
+
+void ClothMesh::loadObj(const string &file)
+{
+  /* TODO(Ish): need to delete the existing mesh structure before
+   * loading obj */
+  fstream fin(file.c_str(), ios::in);
+  if (!fin) {
+    cout << "error: No file found at " << file << endl;
+    return;
+  }
+
+  while (fin) {
+    string line;
+    getValidLine(fin, line);
+    stringstream linestream(line);
+    string keyword;
+    linestream >> keyword;
+    if (keyword == "vt") {
+      Vec3 uv;
+      linestream >> uv[0] >> uv[1];
+      this->add(new ClothVert(uv));
+    }
+    else if (keyword == "v") {
+      Vec3 x;
+      linestream >> x[0] >> x[1] >> x[2];
+      this->add(new ClothNode(x, Vec3(0)));
+    }
+    else if (keyword == "e") {
+      int n0, n1;
+      linestream >> n0 >> n1;
+      this->add(new ClothEdge(this->nodes[n0 - 1], this->nodes[n1 - 1]));
+    }
+    else if (keyword == "f") {
+      vector<ClothVert *> verts;
+      vector<ClothNode *> nodes;
+      string w;
+      while (linestream >> w) {
+        stringstream wstream(w);
+        int v, n;
+        char c;
+        wstream >> n >> c >> v;
+        nodes.push_back(this->nodes[n - 1]);
+        if (wstream) {
+          verts.push_back(this->verts[v - 1]);
+        }
+        else if (!nodes.back()->verts.empty()) {
+          verts.push_back(nodes.back()->verts[0]);
+        }
+        else {
+          verts.push_back(new ClothVert(nodes.back()->x));
+          this->add(verts.back());
+        }
+      }
+      for (int v = 0; v < verts.size(); v++) {
+        connectVertWithNode(verts[v], nodes[v]);
+      }
+      vector<ClothFace *> faces = triangulate(verts);
+      for (int f = 0; f < faces.size(); f++) {
+        this->add(faces[f]);
+      }
+    }
+  }
+}
+
+void ClothMesh::deleteMesh()
+{
+  for (int i = 0; i < verts.size(); i++) {
+    delete verts[i];
+  }
+  for (int i = 0; i < nodes.size(); i++) {
+    delete nodes[i];
+  }
+  for (int i = 0; i < edges.size(); i++) {
+    delete edges[i];
+  }
+  for (int i = 0; i < faces.size(); i++) {
+    delete faces[i];
+  }
+
+  verts.clear();
+  verts.shrink_to_fit();
+  nodes.clear();
+  nodes.shrink_to_fit();
+  edges.clear();
+  edges.shrink_to_fit();
+  faces.clear();
+  faces.shrink_to_fit();
+}

@@ -3,6 +3,10 @@
 
 #include <vector>
 #include <cassert>
+#include <string>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 #include "math.hpp"
 #include "misc.hpp"
@@ -126,6 +130,14 @@ class ClothMesh {
   void remove(ClothFace *face);
 
   void setIndices();
+
+  void loadObj(const string &file);
+
+  void deleteMesh();
+  ~ClothMesh()
+  {
+    deleteMesh();
+  }
 };
 
 inline ClothEdge *getEdge(const ClothNode *n0, const ClothNode *n1)
