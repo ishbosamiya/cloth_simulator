@@ -7,3 +7,5 @@ GRTAGS
 GTAGS
 references/
 temp/
+*.obj
+*.bak

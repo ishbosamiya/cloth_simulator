@@ -136,6 +136,7 @@ class ClothMesh {
   void setIndices();
 
   void loadObj(const string &file);
+  void saveObj(const string &filename);
 
   void deleteMesh();
   ~ClothMesh()

@@ -165,6 +165,7 @@ void ClothMesh::loadObj(const string &file)
     return;
   }
 
+  vector<Vec3> normals;
   while (fin) {
     string line;
     getValidLine(fin, line);
@@ -181,6 +182,11 @@ void ClothMesh::loadObj(const string &file)
       linestream >> x[0] >> x[1] >> x[2];
       this->add(new ClothNode(x, Vec3(0)));
     }
+    else if (keyword == "vn") {
+      Vec3 n;
+      linestream >> n[0] >> n[1] >> n[2];
+      normals.push_back(n);
+    }
     else if (keyword == "e") {
       int n0, n1;
       linestream >> n0 >> n1;
@@ -192,10 +198,11 @@ void ClothMesh::loadObj(const string &file)
       string w;
       while (linestream >> w) {
         stringstream wstream(w);
-        int v, n;
-        char c;
-        wstream >> n >> c >> v;
+        int v, n, vn; /* vt, v, vn */
+        char c, c2;
+        wstream >> n >> c >> v >> c2 >> vn;
         nodes.push_back(this->nodes[n - 1]);
+        this->nodes[n - 1]->n = normals[vn - 1];
         if (wstream) {
           verts.push_back(this->verts[v - 1]);
         }
@@ -216,6 +223,34 @@ void ClothMesh::loadObj(const string &file)
       }
     }
   }
+  normals.clear();
+}
+
+void ClothMesh::saveObj(const string &filename)
+{
+  setIndices();
+  fstream fout(filename.c_str(), ios::out);
+  for (int i = 0; i < nodes.size(); i++) {
+    const ClothNode *node = nodes[i];
+    fout << "v " << node->x[0] << " " << node->x[1] << " " << node->x[2] << endl;
+  }
+  for (int i = 0; i < verts.size(); i++) {
+    const ClothVert *vert = verts[i];
+    fout << "vt " << vert->uv[0] << " " << vert->uv[1] << endl;
+  }
+  for (int i = 0; i < nodes.size(); i++) {
+    const ClothNode *node = nodes[i];
+    fout << "vn " << node->n[0] << " " << node->n[1] << " " << node->n[2] << endl;
+  }
+  for (int i = 0; i < faces.size(); i++) {
+    const ClothFace *face = faces[i];
+    fout << "f " << face->v[0]->node->index + 1 << "/" << face->v[0]->index + 1 << "/"
+         << face->v[0]->node->index + 1 << " " << face->v[1]->node->index + 1 << "/"
+         << face->v[1]->index + 1 << "/" << face->v[0]->node->index + 1 << " "
+         << face->v[2]->node->index + 1 << "/" << face->v[2]->index + 1 << "/"
+         << face->v[0]->node->index + 1 << endl;
+  }
+}
 }
 
 void ClothMesh::deleteMesh()
