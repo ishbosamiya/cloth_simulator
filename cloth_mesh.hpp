@@ -56,11 +56,15 @@ class ClothNode {
   Vec3 x;                    /* world space position of node */
   Vec3 x0;                   /* previous world space position of node */
   Vec3 v;                    /* world space velocity of node */
+  Vec3 n;                    /* world space normal */
 
   ClothNode() : index(-1)
   {
   }
   ClothNode(const Vec3 &x, const Vec3 &v) : x(x), v(v)
+  {
+  }
+  ClothNode(const Vec3 &x, const Vec3 &v, const Vec3 &n) : x(x), v(v), n(n)
   {
   }
 };
