@@ -1,15 +1,30 @@
 CC = g++
-FLAGS =
+
+ifeq (${mode}, release)
+	FLAGS =
+else
+	mode = debug
+	FLAGS = -g
+endif
+
 GL_FLAGS = -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl
 OBJS = glad.o main.o cloth_mesh.o
-PROJECT = cloth_simulator
+PROJECT_NAME = cloth_simulator
+
+ifeq (${mode}, debug)
+	PROJECT = ${PROJECT_NAME}_debug
+else
+	PROJECT = ${PROJECT_NAME}
+endif
 
 ${PROJECT}: ${OBJS} clean_emacs_files
+	@echo "Building on "${mode}" mode"
+	@echo ".........................."
 	${CC} ${FLAGS} ${OBJS} -o $@ ${GL_FLAGS}
 	-make clean
 
 debug: ${OBJS} clean_emacs_files
-	${CC} ${FLAGS} -g ${OBJS} -o ${PROJECT}_debug ${GL_FLAGS}
+	${CC} ${FLAGS} -ggdb3 ${OBJS} -o ${PROJECT}_debug ${GL_FLAGS}
 	-make clean
 
 glad.o:
@@ -25,4 +40,4 @@ clean:
 clean_emacs_files:
 	-rm -rf *~
 clean_all: clean clean_emacs_files
-	-rm -rf ${PROJECT} ${PROJECT}_debug
+	-rm -rf ${PROJECT_NAME} ${PROJECT_NAME}_debug
