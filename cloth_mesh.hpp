@@ -10,6 +10,7 @@
 
 #include "math.hpp"
 #include "misc.hpp"
+#include "opengl_mesh.hpp"
 
 using namespace std;
 
@@ -137,6 +138,8 @@ class ClothMesh {
 
   void loadObj(const string &file);
   void saveObj(const string &filename);
+
+  GLMesh convertToGLMesh();
 
   void deleteMesh();
   ~ClothMesh()

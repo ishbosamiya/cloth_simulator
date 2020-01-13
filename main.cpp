@@ -6,6 +6,7 @@
 #include "cloth_mesh.hpp"
 #include "shader.hpp"
 #include "camera.hpp"
+#include "opengl_mesh.hpp"
 
 using namespace std;
 
@@ -63,107 +64,10 @@ int main()
 
   // build and compile our shader program
   Shader shader("shader.vs", "shader.fs");
-
-  // set up vertex data (and buffer(s)) and configure vertex attributes
-  float vertices[] = {-0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-
-                      0.5f,  -0.5f, -0.5f, 1.0f, 0.0f,
-
-                      0.5f,  0.5f,  -0.5f, 1.0f, 1.0f,
-
-                      0.5f,  0.5f,  -0.5f, 1.0f, 1.0f,
-
-                      -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f,
-
-                      -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-
-                      -0.5f, -0.5f, 0.5f,  0.0f, 0.0f,
-
-                      0.5f,  -0.5f, 0.5f,  1.0f, 0.0f,
-
-                      0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-
-                      0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-
-                      -0.5f, 0.5f,  0.5f,  0.0f, 1.0f,
-
-                      -0.5f, -0.5f, 0.5f,  0.0f, 0.0f,
-
-                      -0.5f, 0.5f,  0.5f,  1.0f, 0.0f,
-
-                      -0.5f, 0.5f,  -0.5f, 1.0f, 1.0f,
-
-                      -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-
-                      -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-
-                      -0.5f, -0.5f, 0.5f,  0.0f, 0.0f,
-
-                      -0.5f, 0.5f,  0.5f,  1.0f, 0.0f,
-
-                      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-                      0.5f,  0.5f,  -0.5f, 1.0f, 1.0f,
-
-                      0.5f,  -0.5f, -0.5f, 0.0f, 1.0f,
-
-                      0.5f,  -0.5f, -0.5f, 0.0f, 1.0f,
-
-                      0.5f,  -0.5f, 0.5f,  0.0f, 0.0f,
-
-                      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-                      -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-
-                      0.5f,  -0.5f, -0.5f, 1.0f, 1.0f,
-
-                      0.5f,  -0.5f, 0.5f,  1.0f, 0.0f,
-
-                      0.5f,  -0.5f, 0.5f,  1.0f, 0.0f,
-
-                      -0.5f, -0.5f, 0.5f,  0.0f, 0.0f,
-
-                      -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-
-                      -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f,
-
-                      0.5f,  0.5f,  -0.5f, 1.0f, 1.0f,
-
-                      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-                      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-                      -0.5f, 0.5f,  0.5f,  0.0f, 0.0f,
-
-                      -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f};
-  // world space positions of our cubes
-  glm::vec3 cube_positions[] = {glm::vec3(0.0f, 0.0f, 0.0f),
-                                glm::vec3(2.0f, 5.0f, -15.0f),
-                                glm::vec3(-1.5f, -2.2f, -2.5f),
-                                glm::vec3(-3.8f, -2.0f, -12.3f),
-                                glm::vec3(2.4f, -0.4f, -3.5f),
-                                glm::vec3(-1.7f, 3.0f, -7.5f),
-                                glm::vec3(1.3f, -2.0f, -2.5f),
-                                glm::vec3(1.5f, 2.0f, -2.5f),
-                                glm::vec3(1.5f, 0.2f, -1.5f),
-                                glm::vec3(-1.3f, 1.0f, -1.5f)};
-
-  unsigned int VBO, VAO;
-  glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-  // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure
-  // vertex attributes(s).
-  glBindVertexArray(VAO);
-
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-  // position
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
-  glEnableVertexAttribArray(0);
-  // uv
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
+  ClothMesh cmesh;
+  cmesh.loadObj("something.obj");
+  cmesh.saveObj("something_saved.obj");
+  GLMesh gl_mesh = cmesh.convertToGLMesh();
 
   // render loop
   while (!glfwWindowShouldClose(window)) {
@@ -191,26 +95,15 @@ int main()
     glm::mat4 view = camera.getViewMatrix();
     shader.setMat4("view", view);
 
-    glBindVertexArray(VAO);  // seeing as we only have a single VAO there's no need to bind it
-                             // every time, but we'll do so to keep
-                             // things a bit more organized
-    for (int i = 0; i < 10; i++) {
-      glm::mat4 model = glm::mat4(1.0f);
-      model = glm::translate(model, cube_positions[i]);
-      float angle = 20.0f * i;
-      model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-      shader.setMat4("model", model);
-      glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
+    glm::mat4 model = glm::mat4(1.0f);
+    shader.setMat4("model", model);
+
+    gl_mesh.draw();
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
-
-  // optional: de-allocate all resources once they've outlived their purpose:
-  glDeleteVertexArrays(1, &VAO);
-  glDeleteBuffers(1, &VBO);
 
   // glfw: terminate, clearing all previously allocated GLFW resources.
   glfwTerminate();

@@ -228,6 +228,9 @@ void ClothMesh::loadObj(const string &file)
 
 void ClothMesh::saveObj(const string &filename)
 {
+  /* TODO(ish): setIndices() here might be useless, some basic
+   * testing, the indices remain the same between loading a mesh and
+   * immediately doing this, might change when the mesh is modified */
   setIndices();
   fstream fout(filename.c_str(), ios::out);
   for (int i = 0; i < nodes.size(); i++) {
@@ -251,6 +254,40 @@ void ClothMesh::saveObj(const string &filename)
          << face->v[0]->node->index + 1 << endl;
   }
 }
+
+GLMesh ClothMesh::convertToGLMesh()
+{
+  /* TODO(ish): this is just a test for now */
+  setIndices();
+  vector<GLVertex> gl_verts;
+  vector<unsigned int> gl_indices;
+
+  gl_verts.resize(nodes.size());
+  for (int i = 0; i < nodes.size(); i++) {
+    const ClothNode *node = nodes[i];
+    GLVertex gl_vert;
+    gl_vert.x.x = node->x[0];
+    gl_vert.x.y = node->x[1];
+    gl_vert.x.z = node->x[2];
+
+    gl_vert.uv.x = node->verts[0]->uv[0];
+    gl_vert.uv.y = node->verts[0]->uv[1];
+
+    gl_vert.n.x = node->n[0];
+    gl_vert.n.y = node->n[1];
+    gl_vert.n.z = node->n[2];
+
+    gl_verts[i] = gl_vert;
+  }
+
+  for (int i = 0; i < faces.size(); i++) {
+    const ClothFace *face = faces[i];
+    for (int j = 0; j < 3; j++) {
+      gl_indices.push_back(face->v[j]->node->index);
+    }
+  }
+
+  return GLMesh(gl_verts, gl_indices);
 }
 
 void ClothMesh::deleteMesh()
