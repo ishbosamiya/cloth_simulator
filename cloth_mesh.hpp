@@ -141,6 +141,8 @@ class ClothMesh {
 
   GLMesh convertToGLMesh();
 
+  void shadeSmooth();
+
   void deleteMesh();
   ~ClothMesh()
   {

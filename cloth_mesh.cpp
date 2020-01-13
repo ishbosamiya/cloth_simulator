@@ -257,6 +257,7 @@ void ClothMesh::saveObj(const string &filename)
 
 GLMesh ClothMesh::convertToGLMesh()
 {
+  shadeSmooth();
   /* TODO(ish): this is just a test for now */
   setIndices();
   vector<GLVertex> gl_verts;
@@ -288,6 +289,34 @@ GLMesh ClothMesh::convertToGLMesh()
   }
 
   return GLMesh(gl_verts, gl_indices);
+}
+
+void ClothMesh::shadeSmooth()
+{
+  for (int i = 0; i < nodes.size(); i++) {
+    ClothNode *node = nodes[i];
+
+    /* TODO(ish): There is a faster way to do this, right now there are
+       duplicate faces for which the normals are calculated */
+    Vec3 n(0.0f);
+    for (int v = 0; v < node->verts.size(); v++) {
+      const ClothVert *vert = node->verts[v];
+      for (int f = 0; f < vert->adj_f.size(); f++) {
+        const ClothFace *face = vert->adj_f[f];
+
+        int j = find(vert, face->v);
+        int j1 = (j + 1) % 3;
+        int j2 = (j + 2) % 3;
+
+        Vec3 e1 = face->v[j1]->node->x - vert->node->x;
+        Vec3 e2 = face->v[j2]->node->x - vert->node->x;
+
+        n += cross(e1, e2) / (2 * norm2(e1) * norm2(e2));
+      }
+    }
+
+    node->n = normalize(n);
+  }
 }
 
 void ClothMesh::deleteMesh()

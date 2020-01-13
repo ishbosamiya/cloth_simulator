@@ -79,7 +79,7 @@ nT VecnT operator+(const VecnT &u, const VecnT &v)
   return w;
 }
 
-nT VecnT &operator+=(const VecnT &u, const VecnT &v)
+nT VecnT &operator+=(VecnT &u, const VecnT &v)
 {
   return u = u + v;
 }
@@ -102,7 +102,7 @@ nT VecnT operator-(const VecnT &u, const VecnT &v)
   return w;
 }
 
-nT VecnT &operator-=(const VecnT &u, const VecnT &v)
+nT VecnT &operator-=(VecnT &u, const VecnT &v)
 {
   return u = u - v;
 }
@@ -121,7 +121,7 @@ nT VecnT operator*(const VecnT &u, const T &a)
   return a * u;
 }
 
-nT VecnT &operator*=(const VecnT &u, const T &a)
+nT VecnT &operator*=(VecnT &u, const T &a)
 {
   return u = u * a;
 }
@@ -131,7 +131,7 @@ nT VecnT operator/(const VecnT &u, const T &a)
   return u * (1.0f / a);
 }
 
-nT VecnT &operator/=(const VecnT &u, const T &a)
+nT VecnT &operator/=(VecnT &u, const T &a)
 {
   return u = u / a;
 }
@@ -380,7 +380,7 @@ mnT MatmnT operator+(const MatmnT &A, const MatmnT &B)
   return C;
 }
 
-mnT MatmnT &operator+=(const MatmnT &A, const MatmnT &B)
+mnT MatmnT &operator+=(MatmnT &A, const MatmnT &B)
 {
   return A = A + B;
 }
@@ -390,7 +390,7 @@ mnT MatmnT operator-(const MatmnT &A, const MatmnT &B)
   return A + (-B);
 }
 
-mnT MatmnT &operator-=(const MatmnT &A, const MatmnT &B)
+mnT MatmnT &operator-=(MatmnT &A, const MatmnT &B)
 {
   return A = A - B;
 }
