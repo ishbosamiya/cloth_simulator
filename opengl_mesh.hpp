@@ -59,14 +59,14 @@ class GLMesh {
     // positions
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLVertex), (void *)0);
-    // normals
+    // uv
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(
-        1, 3, GL_FLOAT, GL_FALSE, sizeof(GLVertex), (void *)offsetof(GLVertex, n));
-    // uv
+        1, 2, GL_FLOAT, GL_FALSE, sizeof(GLVertex), (void *)offsetof(GLVertex, uv));
+    // normals
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(
-        2, 2, GL_FLOAT, GL_FALSE, sizeof(GLVertex), (void *)offsetof(GLVertex, uv));
+        2, 3, GL_FLOAT, GL_FALSE, sizeof(GLVertex), (void *)offsetof(GLVertex, n));
 
     glBindVertexArray(0);
   }

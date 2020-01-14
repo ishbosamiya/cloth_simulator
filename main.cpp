@@ -63,11 +63,16 @@ int main()
   glEnable(GL_DEPTH_TEST);
 
   // build and compile our shader program
-  Shader shader("shader.vs", "shader.fs");
+  Shader point_light_shader("shaders/point_light.vert", "shaders/point_light.frag");
+  Shader light_shader("shaders/light.vert", "shaders/light.frag");
   ClothMesh cmesh;
   cmesh.loadObj("something.obj");
-  cmesh.saveObj("something_saved.obj");
+  ClothMesh light;
+  light.loadObj("light.obj");
   GLMesh gl_mesh = cmesh.convertToGLMesh();
+  GLMesh gl_light = light.convertToGLMesh();
+
+  glm::vec3 light_pos(1.0f, 1.0f, 1.0f);
 
   // render loop
   while (!glfwWindowShouldClose(window)) {
@@ -84,21 +89,41 @@ int main()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // use shader
-    shader.use();
+    point_light_shader.use();
+    point_light_shader.setVec3("viewPos", camera.position);
+    point_light_shader.setVec3("material.color", 0.3f, 0.2f, 0.7f);
+    glm::vec3 specular(0.2f);
+    point_light_shader.setVec3("material.specular", specular);
+    point_light_shader.setFloat("material.shininess", 4.0f);
+    point_light_shader.setVec3("light.position", light_pos);
+    point_light_shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+    point_light_shader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
+    point_light_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+    point_light_shader.setFloat("light.constant", 1.0f);
+    point_light_shader.setFloat("light.linear", 0.09f);
+    point_light_shader.setFloat("light.quadratic", 0.032f);
 
-    // pass projection matrix to shader (note that in this case it could change every frame)
     glm::mat4 projection = glm::perspective(
         glm::radians(camera.zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    shader.setMat4("projection", projection);
-
-    // camera/view transformation
     glm::mat4 view = camera.getViewMatrix();
-    shader.setMat4("view", view);
+
+    point_light_shader.setMat4("projection", projection);
+    point_light_shader.setMat4("view", view);
 
     glm::mat4 model = glm::mat4(1.0f);
-    shader.setMat4("model", model);
+    point_light_shader.setMat4("model", model);
 
     gl_mesh.draw();
+
+    light_shader.use();
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, light_pos);
+    model = glm::scale(model, glm::vec3(0.2f));
+    light_shader.setMat4("projection", projection);
+    light_shader.setMat4("view", view);
+    light_shader.setMat4("model", model);
+
+    gl_light.draw();
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(window);
