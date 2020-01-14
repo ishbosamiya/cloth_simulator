@@ -63,7 +63,8 @@ int main()
   glEnable(GL_DEPTH_TEST);
 
   // build and compile our shader program
-  Shader point_light_shader("shaders/point_light.vert", "shaders/point_light.frag");
+  Shader directional_light_shader("shaders/directional_light.vert",
+                                  "shaders/directional_light.frag");
   Shader light_shader("shaders/light.vert", "shaders/light.frag");
   ClothMesh cmesh;
   cmesh.loadObj("something.obj");
@@ -89,35 +90,33 @@ int main()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // use shader
-    point_light_shader.use();
-    point_light_shader.setVec3("viewPos", camera.position);
-    point_light_shader.setVec3("material.color", 0.3f, 0.2f, 0.7f);
-    glm::vec3 specular(0.2f);
-    point_light_shader.setVec3("material.specular", specular);
-    point_light_shader.setFloat("material.shininess", 4.0f);
-    point_light_shader.setVec3("light.position", light_pos);
-    point_light_shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
-    point_light_shader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
-    point_light_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
-    point_light_shader.setFloat("light.constant", 1.0f);
-    point_light_shader.setFloat("light.linear", 0.09f);
-    point_light_shader.setFloat("light.quadratic", 0.032f);
+    directional_light_shader.use();
+    directional_light_shader.setVec3("viewPos", camera.position);
+    directional_light_shader.setVec3("material.color", 0.3f, 0.2f, 0.7f);
+    glm::vec3 specular(0.3f);
+    directional_light_shader.setVec3("material.specular", specular);
+    directional_light_shader.setFloat("material.shininess", 4.0f);
+    glm::vec3 light_dir(-0.7f, -1.0f, -0.7f);
+    directional_light_shader.setVec3("light.direction", light_dir);
+    directional_light_shader.setVec3("light.ambient", 0.3f, 0.3f, 0.3f);
+    directional_light_shader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
+    directional_light_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
     glm::mat4 projection = glm::perspective(
         glm::radians(camera.zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
     glm::mat4 view = camera.getViewMatrix();
 
-    point_light_shader.setMat4("projection", projection);
-    point_light_shader.setMat4("view", view);
+    directional_light_shader.setMat4("projection", projection);
+    directional_light_shader.setMat4("view", view);
 
     glm::mat4 model = glm::mat4(1.0f);
-    point_light_shader.setMat4("model", model);
+    directional_light_shader.setMat4("model", model);
 
     gl_mesh.draw();
 
     light_shader.use();
     model = glm::mat4(1.0f);
-    model = glm::translate(model, light_pos);
+    model = glm::translate(model, light_dir * glm::vec3(-2.2f));
     model = glm::scale(model, glm::vec3(0.2f));
     light_shader.setMat4("projection", projection);
     light_shader.setMat4("view", view);
