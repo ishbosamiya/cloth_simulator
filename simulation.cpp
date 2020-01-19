@@ -159,7 +159,7 @@ void Simulation::setConstraints()
   for (int i = 0; i < num_edges; i++) {
     const ClothEdge *edge = mesh->edges[i];
 
-    double rest_length = norm2(edge->n[0]->x - edge->n[1]->x);
+    double rest_length = norm(edge->n[0]->x - edge->n[1]->x);
     SpringConstraint *c = new SpringConstraint(
         &stiffness_stretch, edge->n[0]->index, edge->n[1]->index, rest_length);
     constraints.push_back(c);
