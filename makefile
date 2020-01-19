@@ -2,7 +2,7 @@ CC = g++
 INCLUDES = -I/usr/include/eigen3/
 
 ifeq (${mode}, release)
-	FLAGS =
+	FLAGS = -o3
 else
 	mode = debug
 	FLAGS = -g

@@ -58,6 +58,11 @@ class Simulation {
  public:
   Simulation(ClothMesh *mesh) : mesh(mesh)
   {
+    h = 0.03333d;
+    stiffness_stretch = 80.0d;
+    gravity_constant = 0.0d;
+    iterations_per_frame = 1;
+
     reset();
   }
 

@@ -180,5 +180,19 @@ void Simulation::reset()
   inertia_y.resize(num_nodes * 3);
   external_forces.resize(num_nodes * 3);
 
+  /* TODO(ish): mass_matrix and identity_matrix initialization should
+   * be done by ClothMesh */
+  mesh->mass_matrix.resize(num_nodes * 3, num_nodes * 3);
+  mesh->identity_matrix.resize(num_nodes * 3, num_nodes * 3);
+  double mass = 1.0f;
+  vector<EigenSparseMatrixTriplet> i_triplets;
+  vector<EigenSparseMatrixTriplet> m_triplets;
+  for (int i = 0; i < num_nodes * 3; i++) {
+    i_triplets.push_back(EigenSparseMatrixTriplet(i, i, 1));
+    m_triplets.push_back(EigenSparseMatrixTriplet(i, i, mass));
+  }
+  mesh->mass_matrix.setFromTriplets(m_triplets.begin(), m_triplets.end());
+  mesh->identity_matrix.setFromTriplets(i_triplets.begin(), i_triplets.end());
+
   setConstraints();
 }

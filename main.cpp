@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -7,6 +8,7 @@
 #include "shader.hpp"
 #include "camera.hpp"
 #include "opengl_mesh.hpp"
+#include "simulation.hpp"
 
 using namespace std;
 
@@ -39,6 +41,9 @@ int main()
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
+  glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
+  glfwSwapInterval(0);
+
   // glfw window creation
   GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Cloth Simulator", NULL, NULL);
   if (window == NULL) {
@@ -70,15 +75,30 @@ int main()
   mesh.loadObj("something.obj");
   ClothMesh light;
   light.loadObj("light.obj");
+  Simulation simulation(&mesh);
 
   glm::vec3 light_pos(1.0f, 1.0f, 1.0f);
 
   // render loop
+  unsigned int frame_count = 0;
+  float initial_time = glfwGetTime();
   while (!glfwWindowShouldClose(window)) {
+    frame_count++;
+
     // per-frame time logic
     float current_frame = glfwGetTime();
     delta_time = current_frame - last_frame;
     last_frame = current_frame;
+
+    float fps = 1.0f / delta_time;
+    if (fps > 60) {
+      if (frame_count % 120 == 0) {
+        cout << "fps: " << (1.0f / delta_time) << endl;
+      }
+    }
+    else {
+      cout << "fps: " << (1.0f / delta_time) << endl;
+    }
 
     // input
     processInput(window);
@@ -121,6 +141,13 @@ int main()
     light_shader.setMat4("model", model);
 
     light.draw();
+
+    if (frame_count < 100) {
+      simulation.update();
+      char output_filename[512];
+      sprintf(output_filename, "./output/obj_%03d.obj", frame_count);
+      mesh.saveObj(output_filename);
+    }
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(window);
