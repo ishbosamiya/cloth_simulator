@@ -608,4 +608,14 @@ typedef Eigen::SparseMatrix<double> EigenSparseMatrix;
 typedef Eigen::Triplet<double, int> EigenSparseMatrixTriplet;
 #define block_vector(a) block<3, 1>(3 * (a), 0)
 
+inline Vec3 eigenToVec3(const EigenVec3 &v)
+{
+  return Vec3(v[0], v[1], v[2]);
+}
+
+inline EigenVec3 vec3ToEigen(const Vec3 &v)
+{
+  return EigenVec3(v[0], v[1], v[2]);
+}
+
 #endif

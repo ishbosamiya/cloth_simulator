@@ -16,7 +16,7 @@ using namespace std;
 
 class Simulation {
  private:
-  float h; /* time step */
+  double h; /* time step */
 
   ClothMesh *mesh;
 
@@ -30,6 +30,29 @@ class Simulation {
   EigenSparseMatrix weighted_laplacian;                                     /* needed in [1] */
   EigenSparseMatrix j_matrix;                                               /* needed in [1] */
   Eigen::SimplicialLLT<EigenSparseMatrix, Eigen::Upper> prefactored_solver; /* needed in [1] */
+
+  /* parameters */
+  double gravity_constant;
+
+  void calculateInertiaY();
+  void calculateExternalForces();
+
+  void updatePosAndVelocity(const EigenVecX &new_pos);
+
+  void evaluateJMatrix(EigenSparseMatrix &r_j);
+  void evaluateDVector(const EigenVecX &x, EigenVecX &r_d);
+  void setWeightedLaplacianMatrix();
+  void setJMatrix();
+  void factorizeDirectSolverLLT(
+      const EigenSparseMatrix &a,
+      Eigen::SimplicialLLT<EigenSparseMatrix, Eigen::Upper> &r_llt_solver);
+  void prefactorize();
+
+  void integrateLocalGlobalOneIteration(EigenVecX &r_x);
+  void integrateOptimization();
+
+ public:
+  void update();
 };
 
 #endif

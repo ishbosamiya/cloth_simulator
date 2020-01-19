@@ -124,6 +124,9 @@ class ClothMesh {
   vector<ClothEdge *> edges;
   vector<ClothFace *> faces;
 
+  EigenMatX mass_matrix;             /* TODO(ish): initialize this */
+  EigenSparseMatrix identity_matrix; /* TODO(ish): initialize this */
+
   void add(ClothVert *vert);
   void add(ClothNode *node);
   void add(ClothEdge *edge);
