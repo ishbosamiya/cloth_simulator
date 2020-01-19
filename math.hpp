@@ -5,6 +5,10 @@
 #include <cassert>
 #include <cmath>
 
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
+
 /* Vec defines a column vector of size n */
 template<int n, typename T = double> class Vec {
  private:
@@ -594,5 +598,14 @@ typedef Mat<2, 2> Mat2x2;
 typedef Mat<3, 3> Mat3x3;
 typedef Mat<3, 2> Mat3x2;
 typedef Mat<2, 3> Mat2x3;
+
+/* Eigen Declarations */
+typedef Eigen::Matrix<double, 3, 3, 0, 3, 3> EigenMat3;
+typedef Eigen::Matrix<double, 3, 1, 0, 3, 1> EigenVec3;
+typedef Eigen::Matrix<double, Eigen::Dynamic, 1> EigenVecX;
+typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> EigenMatX;
+typedef Eigen::SparseMatrix<double> EigenSparseMatrix;
+typedef Eigen::Triplet<double, int> EigenSparseMatrixTriplet;
+#define block_vector(a) block<3, 1>(3 * (a), 0)
 
 #endif

@@ -1,4 +1,5 @@
 CC = g++
+INCLUDES = -I/usr/include/eigen3/
 
 ifeq (${mode}, release)
 	FLAGS =
@@ -8,7 +9,7 @@ else
 endif
 
 GL_FLAGS = -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl
-OBJS = glad.o main.o cloth_mesh.o
+OBJS = glad.o main.o cloth_mesh.o constraint.o simulation.o
 PROJECT_NAME = cloth_simulator
 
 ifeq (${mode}, debug)
@@ -20,19 +21,23 @@ endif
 ${PROJECT}: ${OBJS} clean_emacs_files
 	@echo "Building on "${mode}" mode"
 	@echo ".........................."
-	${CC} ${FLAGS} ${OBJS} -o $@ ${GL_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} ${OBJS} -o $@ ${GL_FLAGS}
 	-make clean
 
 debug: ${OBJS} clean_emacs_files
-	${CC} ${FLAGS} -ggdb3 ${OBJS} -o ${PROJECT}_debug ${GL_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} -ggdb3 ${OBJS} -o ${PROJECT}_debug ${GL_FLAGS}
 	-make clean
 
 glad.o:
 	${CC} -c glad.c -o $@ ${GL_FLAGS}
 main.o:
-	${CC} ${FLAGS} -c main.cpp -o $@ ${GL_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} -c main.cpp -o $@ ${GL_FLAGS}
 cloth_mesh.o:
-	${CC} ${FLAGS} -c cloth_mesh.cpp -o $@ ${GL_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} -c cloth_mesh.cpp -o $@ ${GL_FLAGS}
+constraint.o:
+	${CC} ${INCLUDES} ${FLAGS} -c constraint.cpp -o $@ ${GL_FLAGS}
+simulation.o:
+	${CC} ${INCLUDES} ${FLAGS} -c simulation.cpp -o $@ ${GL_FLAGS}
 
 .PHONEY: clean clean_emacs_files clean_all
 clean:
