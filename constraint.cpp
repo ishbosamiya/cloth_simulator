@@ -8,13 +8,13 @@ void SpringConstraint::evaluateWeightedLaplacian(
   r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p1 + 1, 3 * p1 + 1, ks));
   r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p1 + 2, 3 * p1 + 2, ks));
 
-  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p1 + 0, 3 * p2 + 0, ks));
-  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p1 + 1, 3 * p2 + 1, ks));
-  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p1 + 2, 3 * p2 + 2, ks));
+  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p1 + 0, 3 * p2 + 0, -ks));
+  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p1 + 1, 3 * p2 + 1, -ks));
+  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p1 + 2, 3 * p2 + 2, -ks));
 
-  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p2 + 0, 3 * p1 + 0, ks));
-  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p2 + 1, 3 * p1 + 1, ks));
-  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p2 + 2, 3 * p1 + 2, ks));
+  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p2 + 0, 3 * p1 + 0, -ks));
+  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p2 + 1, 3 * p1 + 1, -ks));
+  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p2 + 2, 3 * p1 + 2, -ks));
 
   r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p2 + 0, 3 * p2 + 0, ks));
   r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p2 + 1, 3 * p2 + 1, ks));

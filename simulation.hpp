@@ -60,8 +60,8 @@ class Simulation {
   {
     h = 0.03333d;
     stiffness_stretch = 80.0d;
-    gravity_constant = 0.0d;
-    iterations_per_frame = 1;
+    gravity_constant = 9.8d;
+    iterations_per_frame = 10;
 
     reset();
   }

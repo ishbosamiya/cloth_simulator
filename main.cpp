@@ -145,7 +145,7 @@ int main()
     if (frame_count < 100) {
       simulation.update();
       char output_filename[512];
-      sprintf(output_filename, "./output/obj_%03d.obj", frame_count);
+      sprintf(output_filename, "/tmp/objs/obj_%03d.obj", frame_count);
       mesh.saveObj(output_filename);
     }
 
