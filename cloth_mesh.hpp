@@ -118,6 +118,11 @@ class ClothFace {
 
 /* Stores the overall Mesh data */
 class ClothMesh {
+ private:
+  void setIndices();
+  GLMesh convertToGLMesh();
+  void deleteMesh();
+
  public:
   vector<ClothVert *> verts;
   vector<ClothNode *> nodes;
@@ -137,16 +142,13 @@ class ClothMesh {
   void remove(ClothEdge *edge);
   void remove(ClothFace *face);
 
-  void setIndices();
-
   void loadObj(const string &file);
   void saveObj(const string &filename);
 
-  GLMesh convertToGLMesh();
-
   void shadeSmooth();
 
-  void deleteMesh();
+  void draw();
+
   ~ClothMesh()
   {
     deleteMesh();

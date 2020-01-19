@@ -66,12 +66,10 @@ int main()
   Shader directional_light_shader("shaders/directional_light.vert",
                                   "shaders/directional_light.frag");
   Shader light_shader("shaders/light.vert", "shaders/light.frag");
-  ClothMesh cmesh;
-  cmesh.loadObj("something.obj");
+  ClothMesh mesh;
+  mesh.loadObj("something.obj");
   ClothMesh light;
   light.loadObj("light.obj");
-  GLMesh gl_mesh = cmesh.convertToGLMesh();
-  GLMesh gl_light = light.convertToGLMesh();
 
   glm::vec3 light_pos(1.0f, 1.0f, 1.0f);
 
@@ -112,7 +110,7 @@ int main()
     glm::mat4 model = glm::mat4(1.0f);
     directional_light_shader.setMat4("model", model);
 
-    gl_mesh.draw();
+    mesh.draw();
 
     light_shader.use();
     model = glm::mat4(1.0f);
@@ -122,7 +120,7 @@ int main()
     light_shader.setMat4("view", view);
     light_shader.setMat4("model", model);
 
-    gl_light.draw();
+    light.draw();
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(window);

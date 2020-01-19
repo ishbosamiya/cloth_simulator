@@ -319,6 +319,12 @@ void ClothMesh::shadeSmooth()
   }
 }
 
+void ClothMesh::draw()
+{
+  GLMesh gl_mesh = convertToGLMesh();
+  gl_mesh.draw();
+}
+
 void ClothMesh::deleteMesh()
 {
   for (int i = 0; i < verts.size(); i++) {
