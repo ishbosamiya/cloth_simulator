@@ -33,6 +33,7 @@ class Simulation {
 
   /* parameters */
   double gravity_constant;
+  double stiffness_stretch;
 
   void calculateInertiaY();
   void calculateExternalForces();
@@ -51,8 +52,22 @@ class Simulation {
   void integrateLocalGlobalOneIteration(EigenVecX &r_x);
   void integrateOptimization();
 
+  void setConstraints();
+  void clearConstraints();
+
  public:
+  Simulation(ClothMesh *mesh) : mesh(mesh)
+  {
+    reset();
+  }
+
+  ~Simulation()
+  {
+    clearConstraints();
+  }
+
   void update();
+  void reset();
 };
 
 #endif

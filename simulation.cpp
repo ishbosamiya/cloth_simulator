@@ -148,3 +148,37 @@ void Simulation::update()
 
   /* TODO(ish): collision detection, adaptive remeshing, damping */
 }
+
+void Simulation::setConstraints()
+{
+  clearConstraints();
+
+  /* TODO(ish): currently only supports simple springs, need to add
+   * bending springs, etc. */
+  const int num_edges = mesh->edges.size();
+  for (int i = 0; i < num_edges; i++) {
+    const ClothEdge *edge = mesh->edges[i];
+
+    double rest_length = norm2(edge->n[0]->x - edge->n[1]->x);
+    SpringConstraint *c = new SpringConstraint(
+        &stiffness_stretch, edge->n[0]->index, edge->n[1]->index, rest_length);
+    constraints.push_back(c);
+  }
+}
+
+void Simulation::clearConstraints()
+{
+  for (int i = 0; i < constraints.size(); i++) {
+    delete constraints[i];
+  }
+  constraints.clear();
+}
+
+void Simulation::reset()
+{
+  const int num_nodes = mesh->nodes.size();
+  inertia_y.resize(num_nodes * 3);
+  external_forces.resize(num_nodes * 3);
+
+  setConstraints();
+}

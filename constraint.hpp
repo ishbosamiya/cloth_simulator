@@ -14,9 +14,17 @@ class Constraint {
   double *stiffness;
 
  public:
-  Constraint(double *stiffness);
-  Constraint(const Constraint &other);
-  virtual ~Constraint();
+  Constraint(double *stiffness) : stiffness(stiffness)
+  {
+  }
+
+  Constraint(const Constraint &other) : stiffness(other.stiffness)
+  {
+  }
+
+  virtual ~Constraint()
+  {
+  }
 
   virtual void evaluateWeightedLaplacian(vector<EigenSparseMatrixTriplet> &r_laplacian_triplets)
   {
@@ -43,9 +51,23 @@ class SpringConstraint : public Constraint {
   unsigned int p1, p2; /* indices of spring end points */
   double rest_length;  /* rest length of spring */
  public:
-  SpringConstraint(double *stiffness);
-  SpringConstraint(const SpringConstraint &other);
-  virtual ~SpringConstraint();
+  SpringConstraint(double *stiffness) : Constraint(stiffness)
+  {
+  }
+
+  SpringConstraint(const SpringConstraint &other)
+      : Constraint(other), p1(other.p1), p2(other.p2), rest_length(other.rest_length)
+  {
+  }
+
+  SpringConstraint(double *stiffness, unsigned int p1, unsigned int p2, double rest_length)
+      : Constraint(stiffness), p1(p1), p2(p2), rest_length(rest_length)
+  {
+  }
+
+  virtual ~SpringConstraint()
+  {
+  }
 
   virtual void evaluateWeightedLaplacian(vector<EigenSparseMatrixTriplet> &r_laplacian_triplets);
 
