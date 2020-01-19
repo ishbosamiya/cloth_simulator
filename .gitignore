@@ -5,7 +5,7 @@ cloth_simulator_debug
 GPATH
 GRTAGS
 GTAGS
-references/
+.references/
 temp/
 *.obj
 *.bak
