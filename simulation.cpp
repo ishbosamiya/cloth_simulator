@@ -115,9 +115,11 @@ void Simulation::prefactorize()
   factorizeDirectSolverLLT(a, prefactored_solver);
 }
 
-void Simulation::integrateLocalGlobalOneIteration(EigenVecX &r_x)
+void Simulation::integrateLocalGlobalOneIteration(EigenVecX &r_x, bool run_prefactorization)
 {
-  prefactorize();
+  if (run_prefactorization) {
+    prefactorize();
+  }
 
   EigenVecX d;
   evaluateDVector(r_x, d);
@@ -132,7 +134,12 @@ void Simulation::integrateOptimization()
   EigenVecX next_pos = inertia_y;
 
   for (int i = 0; i < iterations_per_frame; i++) {
-    integrateLocalGlobalOneIteration(next_pos);
+    if (i == 0) {
+      integrateLocalGlobalOneIteration(next_pos, true);
+    }
+    else {
+      integrateLocalGlobalOneIteration(next_pos, false);
+    }
   }
 
   updatePosAndVelocity(next_pos);

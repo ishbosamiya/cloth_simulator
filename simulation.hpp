@@ -49,7 +49,7 @@ class Simulation {
       Eigen::SimplicialLLT<EigenSparseMatrix, Eigen::Upper> &r_llt_solver);
   void prefactorize();
 
-  void integrateLocalGlobalOneIteration(EigenVecX &r_x);
+  void integrateLocalGlobalOneIteration(EigenVecX &r_x, bool run_prefactorization);
   void integrateOptimization();
 
   void setConstraints();
