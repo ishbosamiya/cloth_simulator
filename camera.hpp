@@ -30,7 +30,12 @@ class Camera {
   float mouse_sensitivity;
   float zoom;
 
-  Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),
+  unsigned int width;
+  unsigned int height;
+
+  Camera(unsigned int width,
+         unsigned int height,
+         glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),
          glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f),
          float yaw = YAW,
          float pitch = PITCH)
@@ -39,6 +44,8 @@ class Camera {
         mouse_sensitivity(SENSITIVITY),
         zoom(ZOOM)
   {
+    this->width = width;
+    this->height = height;
     this->position = position;
     this->world_up = up;
     this->yaw = yaw;
@@ -47,9 +54,14 @@ class Camera {
     updateCameraVectors();
   }
 
-  glm::mat4 getViewMatrix()
+  inline glm::mat4 getViewMatrix()
   {
     return glm::lookAt(position, position + front, up);
+  }
+
+  inline glm::mat4 getProjectionMatrix()
+  {
+    return glm::perspective(glm::radians(zoom), (float)width / (float)height, 0.1f, 100.0f);
   }
 
   void processKeyboard(CameraMovement direction, float delta_time)
@@ -101,6 +113,23 @@ class Camera {
     if (zoom >= 45.0f) {
       zoom = 45.0f;
     }
+  }
+
+  glm::vec3 getRaycastDirection(float mouse_x, float mouse_y)
+  {
+    float x = (2.0f * mouse_x) / width - 1.0f;
+    float y = 1.0f - (2.0f * mouse_y) / height;
+    float z = 1.0f;
+    glm::vec3 ray_nds = glm::vec3(x, y, z);
+    glm::vec4 ray_clip = glm::vec4(ray_nds.x, ray_nds.y, -1.0, 1.0);
+
+    glm::vec4 ray_eye = glm::inverse(getProjectionMatrix()) * ray_clip;
+    ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0, 0.0);
+
+    glm::vec4 ray_wor = (glm::inverse(getViewMatrix()) * ray_eye);
+    glm::vec3 result = glm::vec3(ray_wor.x, ray_wor.y, ray_wor.z);
+    result = glm::normalize(result);
+    return result;
   }
 
  private:
