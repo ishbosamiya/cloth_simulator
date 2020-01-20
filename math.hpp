@@ -9,6 +9,8 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 
+#include <glm/glm.hpp>
+
 /* Vec defines a column vector of size n */
 template<int n, typename T = double> class Vec {
  private:
@@ -42,6 +44,14 @@ template<int n, typename T = double> class Vec {
     col[0] = x;
     col[1] = y;
     col[2] = z;
+  }
+
+  Vec(glm::vec3 p)
+  {
+    static_assert(n == 3, "Vec size must be 3");
+    col[0] = p.x;
+    col[1] = p.y;
+    col[2] = p.z;
   }
 
   Vec(T x, T y, T z, T w)
