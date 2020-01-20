@@ -1,5 +1,29 @@
 #include "constraint.hpp"
 
+void PinConstraint::evaluateWeightedLaplacian(
+    vector<EigenSparseMatrixTriplet> &r_laplacian_triplets)
+{
+  double ks = *(stiffness);
+  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p0 + 0, 3 * p0 + 0, ks));
+  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p0 + 1, 3 * p0 + 1, ks));
+  r_laplacian_triplets.push_back(EigenSparseMatrixTriplet(3 * p0 + 2, 3 * p0 + 2, ks));
+}
+
+void PinConstraint::evaluateDVector(unsigned int index, const EigenVecX &x, EigenVecX &r_d)
+{
+  r_d.block_vector(index) = vec3ToEigen(pos);
+}
+
+void PinConstraint::evaluateJMatrix(unsigned int index,
+                                    vector<EigenSparseMatrixTriplet> &r_j_triplets)
+{
+  double ks = *(stiffness);
+
+  r_j_triplets.push_back(EigenSparseMatrixTriplet(3 * p0 + 0, 3 * index + 0, ks));
+  r_j_triplets.push_back(EigenSparseMatrixTriplet(3 * p0 + 1, 3 * index + 1, ks));
+  r_j_triplets.push_back(EigenSparseMatrixTriplet(3 * p0 + 2, 3 * index + 2, ks));
+}
+
 void SpringConstraint::evaluateWeightedLaplacian(
     vector<EigenSparseMatrixTriplet> &r_laplacian_triplets)
 {
