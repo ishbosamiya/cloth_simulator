@@ -154,6 +154,7 @@ void Simulation::update()
   integrateOptimization();
 
   /* TODO(ish): collision detection, adaptive remeshing, damping */
+  mesh->shadeSmooth();
 }
 
 void Simulation::setConstraints()
@@ -202,4 +203,68 @@ void Simulation::reset()
   mesh->identity_matrix.setFromTriplets(i_triplets.begin(), i_triplets.end());
 
   setConstraints();
+}
+
+bool Simulation::tryToTogglePinConstraint(const Vec3 &p0, const Vec3 &dir)
+{
+  const int num_nodes = mesh->nodes.size();
+  const int num_constraints = constraints.size();
+  Vec3 p1;
+
+  double ray_point_dist;
+  double min_dist = 100.0d;
+  int best_candidate = 0; /* TODO(ish): this might have to be -1 */
+
+  /* Finding the nearest point */
+  for (int i = 0; i < num_nodes; i++) {
+    p1 = mesh->nodes[i]->x;
+
+    ray_point_dist = norm(cross(p1 - p0, dir));
+    if (ray_point_dist < min_dist) {
+      min_dist = ray_point_dist;
+      best_candidate = i;
+    }
+  }
+
+  for (vector<Constraint *>::iterator i = constraints.begin(); i != constraints.end(); i++) {
+    PinConstraint *pc;
+    if (pc = dynamic_cast<PinConstraint *>(*i)) {
+      ray_point_dist = norm(cross(pc->getPos() - p0, dir));
+      if (ray_point_dist < min_dist) {
+        min_dist = ray_point_dist;
+        best_candidate = pc->getIndex();
+      }
+    }
+  }
+
+  if (min_dist > 0.1d) { /* TODO(ish): make the minimum distance to
+                          * any node a user defined parameter */
+    return false;
+  }
+
+  bool current_state_on = false;
+  for (vector<Constraint *>::iterator i = constraints.begin(); i != constraints.end(); i++) {
+    PinConstraint *pc;
+    if (pc = dynamic_cast<PinConstraint *>(*i)) {
+      if (pc->getIndex() == best_candidate) {
+        cout << "removed constraint for " << pc->getPos() << endl;
+        current_state_on = true;
+        constraints.erase(i);
+        break;
+      }
+    }
+  }
+
+  if (!current_state_on) {
+    addPinConstraint(best_candidate);
+    cout << "added constraint for " << mesh->nodes[best_candidate]->x << endl;
+  }
+
+  return true;
+}
+
+void Simulation::addPinConstraint(int index)
+{
+  PinConstraint *pc = new PinConstraint(&stiffness_pin, index, mesh->nodes[index]->x);
+  constraints.push_back(pc);
 }

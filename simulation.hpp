@@ -34,6 +34,7 @@ class Simulation {
   /* parameters */
   double gravity_constant;
   double stiffness_stretch;
+  double stiffness_pin;
 
   void calculateInertiaY();
   void calculateExternalForces();
@@ -59,7 +60,8 @@ class Simulation {
   Simulation(ClothMesh *mesh) : mesh(mesh)
   {
     h = 0.03333d;
-    stiffness_stretch = 80.0d;
+    stiffness_stretch = 80.0d * 10;
+    stiffness_pin = 120.0d * 10;
     gravity_constant = 9.8d;
     iterations_per_frame = 10;
 
@@ -73,6 +75,12 @@ class Simulation {
 
   void update();
   void reset();
+
+  bool tryToTogglePinConstraint(const Vec3 &p0,
+                                const Vec3 &dir); /* this creates a new pin constraint if there
+                                                   * isn't one, otherwise switches it off */
+  void addPinConstraint(int index);               /* adds pin constraint at the
+                                                   * ClothNode index */
 };
 
 #endif
