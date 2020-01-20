@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <cstdio>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -41,8 +42,8 @@ int main()
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-  glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
-  glfwSwapInterval(0);
+  /* glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE); */
+  /* glfwSwapInterval(0); */
 
   // glfw window creation
   GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Cloth Simulator", NULL, NULL);
@@ -91,13 +92,18 @@ int main()
     last_frame = current_frame;
 
     float fps = 1.0f / delta_time;
-    if (fps > 60) {
+    float avg_fps = frame_count / (current_frame - initial_time);
+    if (frame_count > 120) {
+      frame_count = 0;
+      initial_time = glfwGetTime();
+    }
+    if (avg_fps > 56) {
       if (frame_count % 120 == 0) {
-        cout << "fps: " << (1.0f / delta_time) << endl;
+        printf("fps: %.2f avg_fps: %.2f\n", fps, avg_fps);
       }
     }
     else {
-      cout << "fps: " << (1.0f / delta_time) << endl;
+      printf("fps: %.2f avg_fps: %.2f\n", fps, avg_fps);
     }
 
     // input
