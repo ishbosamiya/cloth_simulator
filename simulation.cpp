@@ -250,6 +250,7 @@ bool Simulation::tryToTogglePinConstraint(const Vec3 &p0, const Vec3 &dir)
         cout << "removed constraint for " << pc->getPos() << endl;
         current_state_on = true;
         constraints.erase(i);
+        delete pc;
         break;
       }
     }
