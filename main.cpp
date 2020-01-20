@@ -17,18 +17,23 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
+void handlePinConstraints(GLFWwindow *window, Simulation *simulation, Camera *camera);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(SCR_WIDTH, SCR_HEIGHT, glm::vec3(0.0f, 0.0f, 3.0f));
 float last_x = SCR_WIDTH / 2.0f;
 float last_y = SCR_HEIGHT / 2.0f;
+float last_cursor_x = last_x;
+float last_cursor_y = last_y;
 bool first_mouse = true;
 
 float delta_time = 0.0f;
 float last_frame = 0.0f;
+
+bool simulation_pause = true;
 
 int main()
 {
@@ -59,6 +64,15 @@ int main()
   glfwSetScrollCallback(window, scroll_callback);
 
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  unsigned char pixels[16 * 16 * 4];
+  memset(pixels, 0xff, sizeof(pixels));
+  GLFWimage image;
+  image.width = 16;
+  image.height = 16;
+  image.pixels = pixels;
+  GLFWcursor *cursor = glfwCreateCursor(&image, 0, 0);
+  /* GLFWcursor *cursor = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR); */
+  glfwSetCursor(window, cursor);
 
   // glad: load all OpenGL function pointers
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -108,6 +122,7 @@ int main()
 
     // input
     processInput(window);
+    handlePinConstraints(window, &simulation, &camera);
 
     // render
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -126,8 +141,7 @@ int main()
     directional_light_shader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
     directional_light_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
-    glm::mat4 projection = glm::perspective(
-        glm::radians(camera.zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 projection = camera.getProjectionMatrix();
     glm::mat4 view = camera.getViewMatrix();
 
     directional_light_shader.setMat4("projection", projection);
@@ -148,11 +162,11 @@ int main()
 
     light.draw();
 
-    if (frame_count < 100) {
+    if (!simulation_pause) {
       simulation.update();
-      char output_filename[512];
-      sprintf(output_filename, "/tmp/objs/obj_%03d.obj", frame_count);
-      mesh.saveObj(output_filename);
+      /* char output_filename[512]; */
+      /* sprintf(output_filename, "/tmp/objs/obj_%03d.obj", frame_count); */
+      /* mesh.saveObj(output_filename); */
     }
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -188,6 +202,13 @@ void processInput(GLFWwindow *window)
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
     camera.processKeyboard(RIGHT, delta_time);
   }
+
+  if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+    simulation_pause = false;
+  }
+  else {
+    simulation_pause = true;
+  }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -213,11 +234,48 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
   last_x = xpos;
   last_y = ypos;
 
-  camera.processMouseMovement(xoffset, yoffset);
+  int mouse_state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+  if (mouse_state == GLFW_PRESS) {
+  }
+  else {
+    camera.processMouseMovement(xoffset, yoffset);
+  }
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
   camera.processMouseScroll(yoffset);
+}
+
+void handlePinConstraints(GLFWwindow *window, Simulation *simulation, Camera *camera)
+{
+  static bool still_pressed = false;
+  int mouse_state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+  double x, y;
+  glfwGetCursorPos(window, &x, &y);
+  if (mouse_state == GLFW_PRESS) {
+    if (!still_pressed) {
+      still_pressed = true;
+      glfwSetCursorPos(window, last_cursor_x, last_cursor_y);
+      last_x = last_cursor_x;
+      last_y = last_cursor_y;
+      x = last_cursor_x;
+      y = last_cursor_y;
+      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+  }
+  if (mouse_state == GLFW_RELEASE) {
+    if (still_pressed) {
+      last_cursor_x = x;
+      last_cursor_y = y;
+
+      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+      simulation->tryToTogglePinConstraint(Vec3(camera->position),
+                                           Vec3(camera->getRaycastDirection(x, y)));
+
+      still_pressed = false;
+    }
+  }
 }
