@@ -19,7 +19,7 @@ struct Light {
   float quadratic;
 };
 
-in vec3 TexCoord;
+in vec2 TexCoord;
 in vec3 Normal;
 in vec3 FragPos;
 
