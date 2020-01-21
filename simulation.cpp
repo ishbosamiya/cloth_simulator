@@ -192,7 +192,8 @@ void Simulation::reset()
    * be done by ClothMesh */
   mesh->mass_matrix.resize(num_nodes * 3, num_nodes * 3);
   mesh->identity_matrix.resize(num_nodes * 3, num_nodes * 3);
-  double mass = 1.0f;
+  double mass = 7.0f;
+  mass = mass / (double)num_nodes;
   vector<EigenSparseMatrixTriplet> i_triplets;
   vector<EigenSparseMatrixTriplet> m_triplets;
   for (int i = 0; i < num_nodes * 3; i++) {
