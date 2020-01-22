@@ -270,3 +270,13 @@ void Simulation::addPinConstraint(int index)
   PinConstraint *pc = new PinConstraint(&stiffness_pin, index, mesh->nodes[index]->x);
   constraints.push_back(pc);
 }
+
+void Simulation::drawConstraints(glm::mat4 &projection, glm::mat4 &view)
+{
+  for (vector<Constraint *>::iterator i = constraints.begin(); i != constraints.end(); i++) {
+    PinConstraint *pc;
+    if (pc = dynamic_cast<PinConstraint *>(*i)) {
+      pc->draw(projection, view);
+    }
+  }
+}

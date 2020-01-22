@@ -81,6 +81,8 @@ class Simulation {
                                                    * isn't one, otherwise switches it off */
   void addPinConstraint(int index);               /* adds pin constraint at the
                                                    * ClothNode index */
+
+  void drawConstraints(glm::mat4 &projection, glm::mat4 &view);
 };
 
 #endif

@@ -124,6 +124,15 @@ class ClothMesh {
   void deleteMesh();
 
  public:
+  ClothMesh()
+  {
+  }
+
+  ClothMesh(const string &filename)
+  {
+    loadObj(filename);
+  }
+
   vector<ClothVert *> verts;
   vector<ClothNode *> nodes;
   vector<ClothEdge *> edges;

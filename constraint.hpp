@@ -5,6 +5,8 @@
 #include <iostream>
 
 #include "math.hpp"
+#include "cloth_mesh.hpp"
+#include "shader.hpp"
 
 using namespace std;
 
@@ -35,7 +37,13 @@ class Constraint {
   {
     cout << "warning: reach <Constraint> base class virtual function." << endl;
   }
+
   virtual void evaluateJMatrix(unsigned int index, vector<EigenSparseMatrixTriplet> &r_j_triplets)
+  {
+    cout << "warning: reach <Constraint> base class virtual function." << endl;
+  }
+
+  virtual void draw(glm::mat4 &projection, glm::mat4 &view)
   {
     cout << "warning: reach <Constraint> base class virtual function." << endl;
   }
@@ -86,6 +94,21 @@ class PinConstraint : public Constraint {
   {
     return p0;
   }
+
+  void draw(glm::mat4 &projection, glm::mat4 &view)
+  {
+    static Shader sphere_shader("shaders/sphere.vert", "shaders/sphere.frag");
+    static ClothMesh sphere_mesh("sphere.obj");
+    sphere_shader.use();
+    sphere_shader.setMat4("projection", projection);
+    sphere_shader.setMat4("view", view);
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(pos[0], pos[1], pos[2]));
+    model = glm::scale(model, glm::vec3(0.02f));
+    sphere_shader.setMat4("model", model);
+    sphere_shader.setVec4("color", 0.8, 0.4, 0.5, 1.0);
+    sphere_mesh.draw();
+  }
 };
 
 class SpringConstraint : public Constraint {
@@ -115,6 +138,11 @@ class SpringConstraint : public Constraint {
 
   virtual void evaluateDVector(unsigned int index, const EigenVecX &x, EigenVecX &r_d);
   virtual void evaluateJMatrix(unsigned int index, vector<EigenSparseMatrixTriplet> &r_j_triplets);
+
+  void draw(glm::mat4 &projection, glm::mat4 &view)
+  {
+    /* Nothing to draw here */
+  }
 };
 
 #endif

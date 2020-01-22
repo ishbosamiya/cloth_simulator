@@ -169,6 +169,8 @@ int main()
       /* mesh.saveObj(output_filename); */
     }
 
+    simulation.drawConstraints(projection, view);
+
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(window);
     glfwPollEvents();
