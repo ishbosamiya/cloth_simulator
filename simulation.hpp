@@ -35,6 +35,7 @@ class Simulation {
   double gravity_constant;
   double stiffness_stretch;
   double stiffness_pin;
+  double stiffness_bending;
 
   void calculateInertiaY();
   void calculateExternalForces();
@@ -62,6 +63,7 @@ class Simulation {
     h = 0.03333d;
     stiffness_stretch = 80.0d * 10;
     stiffness_pin = 120.0d * 10;
+    stiffness_bending = 80.0d * 10;
     gravity_constant = 9.8d;
     iterations_per_frame = 10;
 

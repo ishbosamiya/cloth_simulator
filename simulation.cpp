@@ -157,6 +157,36 @@ void Simulation::update()
   mesh->shadeSmooth();
 }
 
+static void getAdjNode(const ClothEdge *edge, ClothNode **r_n1, ClothNode **r_n2)
+{
+  const ClothFace *f1 = edge->adj_f[0];
+  const ClothFace *f2 = edge->adj_f[1];
+
+  if (f1) {
+    if (f1->v[0]->node != edge->n[0] && f1->v[0]->node != edge->n[1]) {
+      *r_n1 = f1->v[0]->node;
+    }
+    else if (f1->v[1]->node != edge->n[0] && f1->v[1]->node != edge->n[1]) {
+      *r_n1 = f1->v[1]->node;
+    }
+    else if (f1->v[2]->node != edge->n[0] && f1->v[2]->node != edge->n[1]) {
+      *r_n1 = f1->v[2]->node;
+    }
+  }
+
+  if (f2) {
+    if (f2->v[0]->node != edge->n[0] && f2->v[0]->node != edge->n[1]) {
+      *r_n2 = f2->v[0]->node;
+    }
+    else if (f2->v[1]->node != edge->n[0] && f2->v[1]->node != edge->n[1]) {
+      *r_n2 = f2->v[1]->node;
+    }
+    else if (f2->v[2]->node != edge->n[0] && f2->v[2]->node != edge->n[1]) {
+      *r_n2 = f2->v[2]->node;
+    }
+  }
+}
+
 void Simulation::setConstraints()
 {
   clearConstraints();
@@ -171,6 +201,15 @@ void Simulation::setConstraints()
     SpringConstraint *c = new SpringConstraint(
         &stiffness_stretch, edge->n[0]->index, edge->n[1]->index, rest_length);
     constraints.push_back(c);
+
+    /* warning: only as a test for now */
+    ClothNode *n1 = NULL, *n2 = NULL;
+    getAdjNode(edge, &n1, &n2);
+    if (n1 && n2) {
+      rest_length = norm(n1->x - n2->x);
+      c = new SpringConstraint(&stiffness_bending, n1->index, n2->index, rest_length);
+      constraints.push_back(c);
+    }
   }
 }
 
