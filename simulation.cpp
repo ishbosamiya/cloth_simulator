@@ -373,25 +373,40 @@ void Simulation::addPinConstraint(int index)
 void Simulation::drawConstraints(glm::mat4 &projection, glm::mat4 &view)
 {
   const int num_constraints = constraints.size();
-  vector<glm::vec3> pos;
-  vector<unsigned int> indices;
-  int count = 0;
+  vector<glm::vec3> pos_stretch;
+  vector<unsigned int> indices_stretch;
+  vector<glm::vec3> pos_bending;
+  vector<unsigned int> indices_bending;
+  int count_stretch = 0;
+  int count_bending = 0;
   for (int i = 0; i < num_constraints; i++) {
     SpringConstraint *sc;
     if (sc = dynamic_cast<SpringConstraint *>(constraints[i])) {
       const ClothNode *node1 = mesh->nodes[sc->getP1()];
       const ClothNode *node2 = mesh->nodes[sc->getP2()];
-      pos.push_back(glm::vec3(node1->x[0], node1->x[1], node1->x[2]));
-      pos.push_back(glm::vec3(node2->x[0], node2->x[1], node2->x[2]));
-      indices.push_back(count++);
-      indices.push_back(count++);
+      if (sc->getStiffnessPointer() == &stiffness_stretch) {
+        pos_stretch.push_back(glm::vec3(node1->x[0], node1->x[1], node1->x[2]));
+        pos_stretch.push_back(glm::vec3(node2->x[0], node2->x[1], node2->x[2]));
+        indices_stretch.push_back(count_stretch++);
+        indices_stretch.push_back(count_stretch++);
+      }
+      else if (sc->getStiffnessPointer() == &stiffness_bending) {
+        pos_bending.push_back(glm::vec3(node1->x[0], node1->x[1], node1->x[2]));
+        pos_bending.push_back(glm::vec3(node2->x[0], node2->x[1], node2->x[2]));
+        indices_bending.push_back(count_bending++);
+        indices_bending.push_back(count_bending++);
+      }
+      else {
+        cout << "error: string was neither stretch nor bending" << endl;
+      }
     }
     else {
       constraints[i]->draw(projection, view);
     }
   }
 
-  GLLine line(pos, indices);
+  GLLine line_stretch(pos_stretch, indices_stretch);
+  GLLine line_bending(pos_bending, indices_bending);
   static Shader sphere_shader("shaders/sphere.vert", "shaders/sphere.frag");
   sphere_shader.use();
   sphere_shader.setMat4("projection", projection);
@@ -399,5 +414,9 @@ void Simulation::drawConstraints(glm::mat4 &projection, glm::mat4 &view)
   glm::mat4 model = glm::mat4(1.0f);
   sphere_shader.setMat4("model", model);
   sphere_shader.setVec4("color", 0.4, 0.8, 0.5, 1.0);
-  line.draw();
+  line_stretch.draw();
+
+  sphere_shader.use();
+  sphere_shader.setVec4("color", 0.8, 0.4, 0.7, 1.0);
+  line_bending.draw();
 }

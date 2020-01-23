@@ -150,6 +150,11 @@ class SpringConstraint : public Constraint {
     return p2;
   }
 
+  double *getStiffnessPointer()
+  {
+    return stiffness;
+  }
+
   void draw(glm::mat4 &projection, glm::mat4 &view)
   {
     /* Nothing to draw here, needs to handle in a different way for
