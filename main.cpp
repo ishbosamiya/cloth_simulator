@@ -35,6 +35,9 @@ float last_frame = 0.0f;
 
 bool simulation_pause = true;
 
+bool draw_constraints_stretch = false;
+bool draw_constraints_bending = false;
+
 int main()
 {
   // glfw: initialize and configure
@@ -169,7 +172,8 @@ int main()
       /* mesh.saveObj(output_filename); */
     }
 
-    simulation.drawConstraints(projection, view);
+    simulation.drawConstraints(
+        projection, view, draw_constraints_stretch, draw_constraints_bending);
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(window);
@@ -203,6 +207,13 @@ void processInput(GLFWwindow *window)
 
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
     camera.processKeyboard(RIGHT, delta_time);
+  }
+
+  if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
+    draw_constraints_stretch = !draw_constraints_stretch;
+  }
+  if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) {
+    draw_constraints_bending = !draw_constraints_bending;
   }
 
   if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {

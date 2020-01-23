@@ -89,7 +89,10 @@ class Simulation {
   void addPinConstraint(int index);               /* adds pin constraint at the
                                                    * ClothNode index */
 
-  void drawConstraints(glm::mat4 &projection, glm::mat4 &view);
+  void drawConstraints(glm::mat4 &projection,
+                       glm::mat4 &view,
+                       bool draw_stretch,
+                       bool draw_bending);
 };
 
 #endif
