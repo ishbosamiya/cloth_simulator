@@ -2,6 +2,7 @@
 #define SIMULATION_HPP
 
 #include <vector>
+#include <cassert>
 
 #include "cloth_mesh.hpp"
 #include "math.hpp"
@@ -36,6 +37,7 @@ class Simulation {
   double stiffness_stretch;
   double stiffness_pin;
   double stiffness_bending;
+  double damping_coefficient;
 
   void calculateInertiaY();
   void calculateExternalForces();
@@ -57,14 +59,17 @@ class Simulation {
   void setConstraints();
   void clearConstraints();
 
+  void dampVelocity();
+
  public:
   Simulation(ClothMesh *mesh) : mesh(mesh)
   {
     h = 0.03333d;
     stiffness_stretch = 80.0d * 10;
     stiffness_pin = 120.0d * 10;
-    stiffness_bending = 80.0d * 10;
+    stiffness_bending = 0.0d * 10;
     gravity_constant = 9.8d;
+    damping_coefficient = 0.001;
     iterations_per_frame = 10;
 
     reset();

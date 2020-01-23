@@ -105,6 +105,11 @@ void Simulation::factorizeDirectSolverLLT(
 
 void Simulation::prefactorize()
 {
+  /* static bool run_already = false; */
+  /* if (run_already) { */
+  /*   return; */
+  /* } */
+  /* run_already = true; */
   EigenSparseMatrix a;
   double h2 = h * h;
 
@@ -145,6 +150,59 @@ void Simulation::integrateOptimization()
   updatePosAndVelocity(next_pos);
 }
 
+void Simulation::dampVelocity()
+{
+  EigenVec3 pos_mc(0.0d, 0.0d, 0.0d);
+  EigenVec3 vel_mc(0.0d, 0.0d, 0.0d);
+  double denominator = 0.0d;
+  double mass = 0.0d;
+  int num_nodes = mesh->nodes.size();
+
+  for (int i = 0; i < num_nodes; i++) {
+    mass = mesh->mass_matrix.coeff(i * 3, i * 3);
+
+    pos_mc += mass * vec3ToEigen(mesh->nodes[i]->x);
+    vel_mc += mass * vec3ToEigen(mesh->nodes[i]->v);
+    denominator += mass;
+  }
+
+  assert(denominator != 0.0d);
+  pos_mc /= denominator;
+  vel_mc /= denominator;
+
+  EigenVec3 angular_momentum(0.0d, 0.0d, 0.0d);
+  EigenVec3 r(0.0d, 0.0d, 0.0d);
+  EigenMat3 inertia;
+  EigenMat3 r_mat;
+  inertia.setZero();
+  r_mat.setZero();
+
+  for (int i = 0; i < num_nodes; i++) {
+    mass = mesh->mass_matrix.coeff(i * 3, i * 3);
+
+    r = vec3ToEigen(mesh->nodes[i]->x) - pos_mc;
+    angular_momentum += r.cross(mass * vec3ToEigen(mesh->nodes[i]->v));
+
+    r_mat.coeffRef(0, 1) = r[2];
+    r_mat.coeffRef(0, 2) = -r[1];
+    r_mat.coeffRef(1, 0) = -r[2];
+    r_mat.coeffRef(1, 2) = r[0];
+    r_mat.coeffRef(2, 0) = r[1];
+    r_mat.coeffRef(2, 1) = -r[0];
+
+    inertia += r_mat * r_mat.transpose() * mass;
+  }
+
+  EigenVec3 angular_vel = inertia.inverse() * angular_momentum;
+
+  EigenVec3 delta_v(0.0d, 0.0d, 0.0d);
+  for (int i = 0; i < num_nodes; ++i) {
+    r = vec3ToEigen(mesh->nodes[i]->x) - pos_mc;
+    delta_v = vel_mc + angular_vel.cross(r) - vec3ToEigen(mesh->nodes[i]->v);
+    mesh->nodes[i]->v += eigenToVec3(damping_coefficient * delta_v);
+  }
+}
+
 void Simulation::update()
 {
   calculateInertiaY();
@@ -153,7 +211,9 @@ void Simulation::update()
 
   integrateOptimization();
 
-  /* TODO(ish): collision detection, adaptive remeshing, damping */
+  /* TODO(ish): collision detection, adaptive remeshing */
+  dampVelocity();
+
   mesh->shadeSmooth();
 }
 

@@ -257,7 +257,7 @@ void ClothMesh::saveObj(const string &filename)
 
 GLMesh ClothMesh::convertToGLMesh()
 {
-  shadeSmooth();
+  /* shadeSmooth(); */
   /* TODO(ish): this is just a test for now */
   setIndices();
   vector<GLVertex> gl_verts;
