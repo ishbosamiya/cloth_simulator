@@ -2,10 +2,10 @@ CC = g++
 INCLUDES = -I/usr/include/eigen3/
 
 ifeq (${mode}, release)
-	FLAGS = -o3 -march=native
+	FLAGS = -O3 -march=native
 else
 	mode = debug
-	FLAGS = -g
+	FLAGS = -O3 -g
 endif
 
 GL_FLAGS = -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl
