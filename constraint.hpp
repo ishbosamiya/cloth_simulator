@@ -115,6 +115,7 @@ class SpringConstraint : public Constraint {
  private:
   unsigned int p1, p2; /* indices of spring end points */
   double rest_length;  /* rest length of spring */
+
  public:
   SpringConstraint(double *stiffness) : Constraint(stiffness)
   {
@@ -139,9 +140,20 @@ class SpringConstraint : public Constraint {
   virtual void evaluateDVector(unsigned int index, const EigenVecX &x, EigenVecX &r_d);
   virtual void evaluateJMatrix(unsigned int index, vector<EigenSparseMatrixTriplet> &r_j_triplets);
 
+  unsigned int getP1()
+  {
+    return p1;
+  }
+
+  unsigned int getP2()
+  {
+    return p2;
+  }
+
   void draw(glm::mat4 &projection, glm::mat4 &view)
   {
-    /* Nothing to draw here */
+    /* Nothing to draw here, needs to handle in a different way for
+     * performance reasons */
   }
 };
 

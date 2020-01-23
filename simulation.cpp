@@ -372,10 +372,32 @@ void Simulation::addPinConstraint(int index)
 
 void Simulation::drawConstraints(glm::mat4 &projection, glm::mat4 &view)
 {
-  for (vector<Constraint *>::iterator i = constraints.begin(); i != constraints.end(); i++) {
-    PinConstraint *pc;
-    if (pc = dynamic_cast<PinConstraint *>(*i)) {
-      pc->draw(projection, view);
+  const int num_constraints = constraints.size();
+  vector<glm::vec3> pos;
+  vector<unsigned int> indices;
+  int count = 0;
+  for (int i = 0; i < num_constraints; i++) {
+    SpringConstraint *sc;
+    if (sc = dynamic_cast<SpringConstraint *>(constraints[i])) {
+      const ClothNode *node1 = mesh->nodes[sc->getP1()];
+      const ClothNode *node2 = mesh->nodes[sc->getP2()];
+      pos.push_back(glm::vec3(node1->x[0], node1->x[1], node1->x[2]));
+      pos.push_back(glm::vec3(node2->x[0], node2->x[1], node2->x[2]));
+      indices.push_back(count++);
+      indices.push_back(count++);
+    }
+    else {
+      constraints[i]->draw(projection, view);
     }
   }
+
+  GLLine line(pos, indices);
+  static Shader sphere_shader("shaders/sphere.vert", "shaders/sphere.frag");
+  sphere_shader.use();
+  sphere_shader.setMat4("projection", projection);
+  sphere_shader.setMat4("view", view);
+  glm::mat4 model = glm::mat4(1.0f);
+  sphere_shader.setMat4("model", model);
+  sphere_shader.setVec4("color", 0.4, 0.8, 0.5, 1.0);
+  line.draw();
 }
