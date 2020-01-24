@@ -405,13 +405,13 @@ void Simulation::drawConstraints(glm::mat4 &projection,
     }
   }
 
-  static Shader sphere_shader("shaders/sphere.vert", "shaders/sphere.frag");
-  sphere_shader.use();
-  sphere_shader.setMat4("projection", projection);
-  sphere_shader.setMat4("view", view);
+  static Shader line_shader("shaders/line.vert", "shaders/line.frag");
+  line_shader.use();
+  line_shader.setMat4("projection", projection);
+  line_shader.setMat4("view", view);
   glm::mat4 model = glm::mat4(1.0f);
-  sphere_shader.setMat4("model", model);
-  sphere_shader.setVec4("color", 0.4, 0.8, 0.5, 1.0);
+  line_shader.setMat4("model", model);
+  line_shader.setVec4("color", 0.4, 0.8, 0.5, 1.0);
 
   if (draw_stretch) {
     GLLine line_stretch(pos_stretch, indices_stretch);
@@ -419,8 +419,8 @@ void Simulation::drawConstraints(glm::mat4 &projection,
   }
   if (draw_bending) {
     GLLine line_bending(pos_bending, indices_bending);
-    sphere_shader.use();
-    sphere_shader.setVec4("color", 0.8, 0.4, 0.7, 1.0);
+    line_shader.use();
+    line_shader.setVec4("color", 0.8, 0.4, 0.7, 1.0);
     line_bending.draw();
   }
 }
