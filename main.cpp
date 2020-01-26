@@ -159,9 +159,11 @@ int main()
 
     light.draw();
 
-    /* model = glm::mat4(1.0f); */
-    /* light_shader.setMat4("model", model); */
-    /* ob_mesh.draw(); */
+    model = glm::mat4(1.0f);
+    directional_light_shader.use();
+    directional_light_shader.setVec3("material.color", 0.7f, 0.5f, 0.5f);
+    directional_light_shader.setMat4("model", model);
+    ob_mesh.draw();
 
     if (!simulation_pause) {
       simulation.update();
