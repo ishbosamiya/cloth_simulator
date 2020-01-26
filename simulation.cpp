@@ -260,47 +260,35 @@ void Simulation::getPenetrations(vector<Vec3> &r_penetrations)
   r_penetrations.clear();
   r_penetrations.resize(num_nodes);
 
+  for (int i = 0; i < num_nodes; i++) {
+    r_penetrations[i] = Vec3(0, 0, 0);
+  }
+
   if (obstacle_meshes.size() == 0) {
-    for (int i = 0; i < num_nodes; i++) {
-      r_penetrations[i] = mesh->nodes[i]->x;
-    }
     return;
   }
 
-  int count = 0;
   for (int i = 0; i < num_nodes; i++) {
     ClothNode *node = mesh->nodes[i];
     for (int om = 0; om < obstacle_meshes.size(); om++) {
-      ClothMesh *ob_mesh = obstacle_meshes[om];
-      for (int f = 0; f < ob_mesh->faces.size(); f++) {
-        ClothFace *face = ob_mesh->faces[f];
-        if (check_vf(node, face)) {
-          count++;
-          double percentage = 0.0;
-          r_penetrations[i] = percentage * node->x + (1.0 - percentage) * node->x0;
-          /* Vec3 normal = normalize(node->x - node->x0); */
-          /* double length = norm(node->x - node->x0); */
-          /* r_penetrations[i] = -2.0 * length * normal; */
-        }
-        else {
-          r_penetrations[i] = node->x;
-        }
+      Sphere *ob_mesh = obstacle_meshes[om];
+      Vec3 n;
+      double distance;
+      if (ob_mesh->intersectionTest(node->x, n, distance)) {
+        r_penetrations[i] += distance * n;
       }
     }
   }
-  cout << "count: " << count << endl;
 }
 
 void Simulation::resolvePenetrations(vector<Vec3> &penetrations)
 {
-  /* TODO(ish): simple implementation for now, just rewriting the
-   * value in penetrations into nodes, this is not valid. Only for
-   * testing */
+  /* TODO(ish): simple implementation for now. Only testing */
   const int num_nodes = mesh->nodes.size();
   assert(num_nodes == penetrations.size());
   for (int i = 0; i < num_nodes; i++) {
     ClothNode *node = mesh->nodes[i];
-    node->x = penetrations[i];
+    node->x -= penetrations[i];
     node->v = (node->x - node->x0) / h;
   }
 }

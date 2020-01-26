@@ -164,6 +164,38 @@ class ClothMesh {
   }
 };
 
+class Sphere {
+ public:
+  double radius;
+  Vec3 position;
+  ClothMesh mesh;
+
+  Sphere(double radius, Vec3 position) : radius(radius), position(position)
+  {
+    storeAsMesh();
+  }
+
+  void storeAsMesh()
+  {
+  }
+
+  bool intersectionTest(const Vec3 &p, Vec3 &r_normal, double &r_distance)
+  {
+    Vec3 diff = p - position;
+    r_distance = norm(diff) - radius - 1e-6;
+    if (r_distance < 0) {
+      r_normal = normalize(diff);
+      return true;
+    }
+    return false;
+  }
+
+  void draw()
+  {
+    mesh.draw();
+  }
+};
+
 inline ClothEdge *getEdge(const ClothNode *n0, const ClothNode *n1)
 {
   for (int i = 0; i < (int)n0->adj_e.size(); i++) {

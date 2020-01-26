@@ -20,10 +20,10 @@ class Simulation {
   double h; /* time step */
 
   ClothMesh *mesh;
-  vector<ClothMesh *> obstacle_meshes; /* TODO(ish): this is a
-                                        * ClothMesh reference for now but
-                                        * should be its own Mesh
-                                        * structure */
+  vector<Sphere *> obstacle_meshes; /* TODO(ish): this is a
+                                     * Sphere reference for now but
+                                     * should be its own Mesh
+                                     * structure */
 
   vector<Constraint *> constraints; /* Springs, pinning, etc. */
 
@@ -74,7 +74,7 @@ class Simulation {
     h = 0.03333d;
     stiffness_stretch = 80.0d * 10;
     stiffness_pin = 120.0d * 10;
-    stiffness_bending = 0.0d * 10;
+    stiffness_bending = 20.0d * 10;
     gravity_constant = 9.8d;
     damping_coefficient = 0.001;
     iterations_per_frame = 10;
@@ -103,7 +103,7 @@ class Simulation {
                        bool draw_stretch,
                        bool draw_bending);
 
-  void addObstacleMesh(ClothMesh *ob_mesh)
+  void addObstacleMesh(Sphere *ob_mesh)
   {
     obstacle_meshes.push_back(ob_mesh);
   }

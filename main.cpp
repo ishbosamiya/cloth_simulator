@@ -86,8 +86,7 @@ int main()
   ClothMesh light;
   light.loadObj("light.obj");
   Simulation simulation(&mesh);
-  ClothMesh ob_mesh;
-  ob_mesh.loadObj("ob_mesh.obj");
+  Sphere ob_mesh(0.3, Vec3(0, -0.5, 0));
   simulation.addObstacleMesh(&ob_mesh);
 
   glm::vec3 light_pos(1.0f, 1.0f, 1.0f);
@@ -160,9 +159,9 @@ int main()
 
     light.draw();
 
-    model = glm::mat4(1.0f);
-    light_shader.setMat4("model", model);
-    ob_mesh.draw();
+    /* model = glm::mat4(1.0f); */
+    /* light_shader.setMat4("model", model); */
+    /* ob_mesh.draw(); */
 
     if (!simulation_pause) {
       simulation.update();
