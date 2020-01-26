@@ -230,7 +230,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
   int mouse_state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE);
   if (mouse_state == GLFW_PRESS) {
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-      camera.pan(last_x, last_y, xpos, ypos, glm::vec3(0, 0, 2));
+      camera.pan(last_x, last_y, xpos, ypos, 1.0f);
     }
     else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
       camera.moveForward(last_y, ypos);

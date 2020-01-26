@@ -95,19 +95,15 @@ class Camera {
     return glm::perspective(glm::radians(zoom), (float)width / (float)height, 0.1f, 100.0f);
   }
 
-  /* plane_position -> the position of the plane on which the panning
-   * should happen, refer to
+  /* refer to
    * https://gamedev.stackexchange.com/questions/81481/how-to-implement-camera-pan-like-in-maya
    * for more details */
   void pan(float mouse_start_x,
            float mouse_start_y,
            float mouse_end_x,
            float mouse_end_y,
-           glm::vec3 plane_position)
+           float len = 1.0f)
   {
-    glm::vec3 dist = position - plane_position;
-    float len = glm::length(dist);
-
     float clipX = mouse_start_x * 2.0 / width - 1.0;
     float clipY = 1.0 - mouse_start_y * 2.0 / height;
 
