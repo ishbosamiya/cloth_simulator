@@ -62,10 +62,10 @@ class ClothNode {
   ClothNode() : index(-1)
   {
   }
-  ClothNode(const Vec3 &x, const Vec3 &v) : x(x), v(v)
+  ClothNode(const Vec3 &x, const Vec3 &v) : x(x), x0(x), v(v)
   {
   }
-  ClothNode(const Vec3 &x, const Vec3 &v, const Vec3 &n) : x(x), v(v), n(n)
+  ClothNode(const Vec3 &x, const Vec3 &v, const Vec3 &n) : x(x), x0(x), v(v), n(n)
   {
   }
 };

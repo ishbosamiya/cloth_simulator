@@ -203,6 +203,108 @@ void Simulation::dampVelocity()
   }
 }
 
+static inline Vec3 normal(Vec3 a0, Vec3 b0, Vec3 c0)
+{
+  return cross(b0 - a0, c0 - a0);
+}
+
+static inline bool check_abcd(
+    Vec3 &p0, Vec3 &a0, Vec3 &b0, Vec3 &c0, Vec3 &p1, Vec3 &a1, Vec3 &b1, Vec3 &c1)
+{
+  Vec3 n0 = normal(a0, b0, c0);
+  Vec3 n1 = normal(a1, b1, c1);
+  Vec3 delta = normal(a1 - a0, b1 - b0, c1 - c0);
+  Vec3 nX = (n0 + n1 - delta) * 0.5;
+
+  Vec3 pa0 = p0 - a0;
+  Vec3 pa1 = p1 - a1;
+
+  float A = dot(n0, pa0);
+  float B = dot(n1, pa1);
+  float C = dot(nX, pa0);
+  float D = dot(nX, pa1);
+  float E = dot(n1, pa0);
+  float F = dot(n0, pa1);
+
+  if (A > 0 && B > 0 && (2 * C + F) > 0 && (2 * D + E) > 0) {
+    return false;
+  }
+
+  if (A < 0 && B < 0 && (2 * C + F) < 0 && (2 * D + E) < 0) {
+    return false;
+  }
+
+  return true;
+}
+
+static inline bool check_vf(ClothNode *node, ClothFace *face)
+{
+  return check_abcd(node->x0,
+                    face->v[0]->node->x0,
+                    face->v[1]->node->x0,
+                    face->v[2]->node->x0,
+                    node->x,
+                    face->v[0]->node->x,
+                    face->v[1]->node->x,
+                    face->v[2]->node->x);
+}
+
+void Simulation::getPenetrations(vector<Vec3> &r_penetrations)
+{
+  /* TODO(ish): simple implementation for now, just interpolate until
+   * half the distance if there is a penetration,
+   * ie. r_penetrations[i] = ((nodes[i]->x + nodes[i]->x0) * 0.5)
+   * otherwise set
+   * r_penetrations[i] = nodes[i]->x */
+  const int num_nodes = mesh->nodes.size();
+  r_penetrations.clear();
+  r_penetrations.resize(num_nodes);
+
+  if (obstacle_meshes.size() == 0) {
+    for (int i = 0; i < num_nodes; i++) {
+      r_penetrations[i] = mesh->nodes[i]->x;
+    }
+    return;
+  }
+
+  int count = 0;
+  for (int i = 0; i < num_nodes; i++) {
+    ClothNode *node = mesh->nodes[i];
+    for (int om = 0; om < obstacle_meshes.size(); om++) {
+      ClothMesh *ob_mesh = obstacle_meshes[om];
+      for (int f = 0; f < ob_mesh->faces.size(); f++) {
+        ClothFace *face = ob_mesh->faces[f];
+        if (check_vf(node, face)) {
+          count++;
+          double percentage = 0.0;
+          r_penetrations[i] = percentage * node->x + (1.0 - percentage) * node->x0;
+          /* Vec3 normal = normalize(node->x - node->x0); */
+          /* double length = norm(node->x - node->x0); */
+          /* r_penetrations[i] = -2.0 * length * normal; */
+        }
+        else {
+          r_penetrations[i] = node->x;
+        }
+      }
+    }
+  }
+  cout << "count: " << count << endl;
+}
+
+void Simulation::resolvePenetrations(vector<Vec3> &penetrations)
+{
+  /* TODO(ish): simple implementation for now, just rewriting the
+   * value in penetrations into nodes, this is not valid. Only for
+   * testing */
+  const int num_nodes = mesh->nodes.size();
+  assert(num_nodes == penetrations.size());
+  for (int i = 0; i < num_nodes; i++) {
+    ClothNode *node = mesh->nodes[i];
+    node->x = penetrations[i];
+    node->v = (node->x - node->x0) / h;
+  }
+}
+
 void Simulation::update()
 {
   calculateInertiaY();
@@ -212,6 +314,10 @@ void Simulation::update()
   integrateOptimization();
 
   /* TODO(ish): collision detection, adaptive remeshing */
+  vector<Vec3> penetrations;
+  getPenetrations(penetrations);
+  resolvePenetrations(penetrations);
+
   dampVelocity();
 
   mesh->shadeSmooth();

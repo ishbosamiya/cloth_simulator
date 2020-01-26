@@ -20,6 +20,10 @@ class Simulation {
   double h; /* time step */
 
   ClothMesh *mesh;
+  vector<ClothMesh *> obstacle_meshes; /* TODO(ish): this is a
+                                        * ClothMesh reference for now but
+                                        * should be its own Mesh
+                                        * structure */
 
   vector<Constraint *> constraints; /* Springs, pinning, etc. */
 
@@ -59,6 +63,9 @@ class Simulation {
   void setConstraints();
   void clearConstraints();
 
+  void getPenetrations(vector<Vec3> &r_penetrations);
+  void resolvePenetrations(vector<Vec3> &penetrations);
+
   void dampVelocity();
 
  public:
@@ -71,6 +78,8 @@ class Simulation {
     gravity_constant = 9.8d;
     damping_coefficient = 0.001;
     iterations_per_frame = 10;
+
+    obstacle_meshes.clear();
 
     reset();
   }
@@ -93,6 +102,11 @@ class Simulation {
                        glm::mat4 &view,
                        bool draw_stretch,
                        bool draw_bending);
+
+  void addObstacleMesh(ClothMesh *ob_mesh)
+  {
+    obstacle_meshes.push_back(ob_mesh);
+  }
 };
 
 #endif
