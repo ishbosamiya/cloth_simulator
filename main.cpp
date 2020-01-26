@@ -117,7 +117,7 @@ int main()
 
     // input
     processInput(window);
-    /* handlePinConstraints(window, &simulation, &camera); */
+    handlePinConstraints(window, &simulation, &camera);
 
     // render
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -259,21 +259,10 @@ void handlePinConstraints(GLFWwindow *window, Simulation *simulation, Camera *ca
   if (mouse_state == GLFW_PRESS) {
     if (!still_pressed) {
       still_pressed = true;
-      glfwSetCursorPos(window, last_cursor_x, last_cursor_y);
-      last_x = last_cursor_x;
-      last_y = last_cursor_y;
-      x = last_cursor_x;
-      y = last_cursor_y;
-      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
   }
   if (mouse_state == GLFW_RELEASE) {
     if (still_pressed) {
-      last_cursor_x = x;
-      last_cursor_y = y;
-
-      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
       simulation->tryToTogglePinConstraint(Vec3(camera->position),
                                            Vec3(camera->getRaycastDirection(x, y)));
 
