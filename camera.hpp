@@ -52,6 +52,37 @@ class Camera {
     this->pitch = pitch;
 
     updateCameraVectors();
+
+    this->initial_position = this->position;
+    this->initial_front = this->front;
+    this->initial_up = this->up;
+    this->initial_right = this->right;
+    this->initial_world_up = this->world_up;
+
+    this->initial_yaw = this->yaw;
+    this->initial_pitch = this->pitch;
+
+    this->initial_movement_speed = this->movement_speed;
+    this->initial_mouse_sensitivity = this->mouse_sensitivity;
+    this->initial_zoom = this->zoom;
+  }
+
+  void reset()
+  {
+    this->position = this->initial_position;
+    this->front = this->initial_front;
+    this->up = this->initial_up;
+    this->right = this->initial_right;
+    this->world_up = this->initial_world_up;
+
+    this->yaw = this->initial_yaw;
+    this->pitch = this->initial_pitch;
+
+    this->movement_speed = this->initial_movement_speed;
+    this->mouse_sensitivity = this->initial_mouse_sensitivity;
+    this->zoom = this->initial_zoom;
+
+    updateCameraVectors();
   }
 
   inline glm::mat4 getViewMatrix()
@@ -62,6 +93,51 @@ class Camera {
   inline glm::mat4 getProjectionMatrix()
   {
     return glm::perspective(glm::radians(zoom), (float)width / (float)height, 0.1f, 100.0f);
+  }
+
+  /* plane_position -> the position of the plane on which the panning
+   * should happen, refer to
+   * https://gamedev.stackexchange.com/questions/81481/how-to-implement-camera-pan-like-in-maya
+   * for more details */
+  void pan(float mouse_start_x,
+           float mouse_start_y,
+           float mouse_end_x,
+           float mouse_end_y,
+           glm::vec3 plane_position)
+  {
+    glm::vec3 dist = position - plane_position;
+    float len = glm::length(dist);
+
+    float clipX = mouse_start_x * 2.0 / width - 1.0;
+    float clipY = 1.0 - mouse_start_y * 2.0 / height;
+
+    float clipEndX = mouse_end_x * 2.0 / width - 1.0;
+    float clipEndY = 1.0 - mouse_end_y * 2.0 / height;
+
+    // convert begin and end mouse positions into world space
+    glm::mat4 inverseMVP = glm::inverse(getProjectionMatrix() * getViewMatrix());
+    glm::vec4 outVector = inverseMVP * glm::vec4(clipX, clipY, 0.0, 1.0);
+    glm::vec3 worldPos(
+        outVector.x / outVector.w, outVector.y / outVector.w, outVector.z / outVector.w);
+
+    glm::vec4 outEndVec = inverseMVP * glm::vec4(clipEndX, clipEndY, 0.0, 1.0);
+    glm::vec3 worldPos2(
+        outEndVec.x / outEndVec.w, outEndVec.y / outEndVec.w, outEndVec.z / outEndVec.w);
+
+    glm::vec3 dir = worldPos2 - worldPos;
+
+    glm::vec3 offset = glm::length(dir) * glm::normalize(dir) * zoom * len / 2.0f;
+    position -= offset;
+  }
+
+  void moveForward(float mouse_start_y, float mouse_end_y)
+  {
+    float clipY = 1.0 - mouse_start_y * 2.0 / height;
+    float clipEndY = 1.0 - mouse_end_y * 2.0 / height;
+
+    float move_by = clipEndY - clipY;
+
+    position += front * move_by;
   }
 
   void processKeyboard(CameraMovement direction, float delta_time)
@@ -133,6 +209,19 @@ class Camera {
   }
 
  private:
+  glm::vec3 initial_position;
+  glm::vec3 initial_front;
+  glm::vec3 initial_up;
+  glm::vec3 initial_right;
+  glm::vec3 initial_world_up;
+
+  float initial_yaw;
+  float initial_pitch;
+
+  float initial_movement_speed;
+  float initial_mouse_sensitivity;
+  float initial_zoom;
+
   void updateCameraVectors()
   {
     glm::vec3 front;

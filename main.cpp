@@ -66,15 +66,7 @@ int main()
   glfwSetCursorPosCallback(window, mouse_callback);
   glfwSetScrollCallback(window, scroll_callback);
 
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-  unsigned char pixels[16 * 16 * 4];
-  memset(pixels, 0xff, sizeof(pixels));
-  GLFWimage image;
-  image.width = 16;
-  image.height = 16;
-  image.pixels = pixels;
-  GLFWcursor *cursor = glfwCreateCursor(&image, 0, 0);
-  /* GLFWcursor *cursor = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR); */
+  GLFWcursor *cursor = glfwCreateStandardCursor(GLFW_CROSSHAIR_CURSOR);
   glfwSetCursor(window, cursor);
 
   // glad: load all OpenGL function pointers
@@ -125,7 +117,7 @@ int main()
 
     // input
     processInput(window);
-    handlePinConstraints(window, &simulation, &camera);
+    /* handlePinConstraints(window, &simulation, &camera); */
 
     // render
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -193,20 +185,10 @@ void processInput(GLFWwindow *window)
     glfwSetWindowShouldClose(window, true);
   }
 
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-    camera.processKeyboard(FORWARD, delta_time);
-  }
-
-  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-    camera.processKeyboard(BACKWARD, delta_time);
-  }
-
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-    camera.processKeyboard(LEFT, delta_time);
-  }
-
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-    camera.processKeyboard(RIGHT, delta_time);
+  if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
+      camera.reset();
+    }
   }
 
   if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
@@ -242,17 +224,24 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
   }
 
   float xoffset = xpos - last_x;
-  float yoffset = last_y - ypos;  // reversed since y-coordinates go from bottom to top
+  float yoffset = last_y - ypos;  // reversed since y-coordinates go
+                                  // from bottom to top
+
+  int mouse_state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE);
+  if (mouse_state == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+      camera.pan(last_x, last_y, xpos, ypos, glm::vec3(0, 0, 2));
+    }
+    else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+      camera.moveForward(last_y, ypos);
+    }
+    else {
+      camera.processMouseMovement(xoffset, yoffset);
+    }
+  }
 
   last_x = xpos;
   last_y = ypos;
-
-  int mouse_state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-  if (mouse_state == GLFW_PRESS) {
-  }
-  else {
-    camera.processMouseMovement(xoffset, yoffset);
-  }
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
