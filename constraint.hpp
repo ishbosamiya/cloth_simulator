@@ -5,7 +5,8 @@
 #include <iostream>
 
 #include "math.hpp"
-#include "cloth_mesh.hpp"
+#include "mesh.hpp"
+#include "primitives.hpp"
 #include "shader.hpp"
 
 using namespace std;
