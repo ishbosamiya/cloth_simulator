@@ -6,7 +6,8 @@ void Simulation::calculateInertiaY()
   inertia_y.resize(num_nodes * 3, Eigen::NoChange);
 
   for (int i = 0; i < num_nodes; i++) {
-    Vec3 y = mesh->nodes[i]->x + mesh->nodes[i]->v * h;
+    const ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
+    Vec3 y = node->x + node->v * h;
     inertia_y.block_vector(i) = vec3ToEigen(y);
   }
 }
@@ -30,7 +31,7 @@ void Simulation::updatePosAndVelocity(const EigenVecX &new_pos)
 {
   const int num_nodes = mesh->nodes.size();
   for (int i = 0; i < num_nodes; i++) {
-    ClothNode *node = mesh->nodes[i];
+    ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
 
     node->x0 = node->x;
     node->x = eigenToVec3(new_pos.block_vector(i));
@@ -159,10 +160,11 @@ void Simulation::dampVelocity()
   int num_nodes = mesh->nodes.size();
 
   for (int i = 0; i < num_nodes; i++) {
+    const ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
     mass = mesh->mass_matrix.coeff(i * 3, i * 3);
 
-    pos_mc += mass * vec3ToEigen(mesh->nodes[i]->x);
-    vel_mc += mass * vec3ToEigen(mesh->nodes[i]->v);
+    pos_mc += mass * vec3ToEigen(node->x);
+    vel_mc += mass * vec3ToEigen(node->v);
     denominator += mass;
   }
 
@@ -178,10 +180,11 @@ void Simulation::dampVelocity()
   r_mat.setZero();
 
   for (int i = 0; i < num_nodes; i++) {
+    const ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
     mass = mesh->mass_matrix.coeff(i * 3, i * 3);
 
-    r = vec3ToEigen(mesh->nodes[i]->x) - pos_mc;
-    angular_momentum += r.cross(mass * vec3ToEigen(mesh->nodes[i]->v));
+    r = vec3ToEigen(node->x) - pos_mc;
+    angular_momentum += r.cross(mass * vec3ToEigen(node->v));
 
     r_mat.coeffRef(0, 1) = r[2];
     r_mat.coeffRef(0, 2) = -r[1];
@@ -197,9 +200,10 @@ void Simulation::dampVelocity()
 
   EigenVec3 delta_v(0.0d, 0.0d, 0.0d);
   for (int i = 0; i < num_nodes; ++i) {
-    r = vec3ToEigen(mesh->nodes[i]->x) - pos_mc;
-    delta_v = vel_mc + angular_vel.cross(r) - vec3ToEigen(mesh->nodes[i]->v);
-    mesh->nodes[i]->v += eigenToVec3(damping_coefficient * delta_v);
+    ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
+    r = vec3ToEigen(node->x) - pos_mc;
+    delta_v = vel_mc + angular_vel.cross(r) - vec3ToEigen(node->v);
+    node->v += eigenToVec3(damping_coefficient * delta_v);
   }
 }
 
@@ -208,8 +212,14 @@ static inline Vec3 normal(Vec3 a0, Vec3 b0, Vec3 c0)
   return cross(b0 - a0, c0 - a0);
 }
 
-static inline bool check_abcd(
-    Vec3 &p0, Vec3 &a0, Vec3 &b0, Vec3 &c0, Vec3 &p1, Vec3 &a1, Vec3 &b1, Vec3 &c1)
+static inline bool check_abcd(const Vec3 &p0,
+                              const Vec3 &a0,
+                              const Vec3 &b0,
+                              const Vec3 &c0,
+                              const Vec3 &p1,
+                              const Vec3 &a1,
+                              const Vec3 &b1,
+                              const Vec3 &c1)
 {
   Vec3 n0 = normal(a0, b0, c0);
   Vec3 n1 = normal(a1, b1, c1);
@@ -239,14 +249,10 @@ static inline bool check_abcd(
 
 static inline bool check_vf(ClothNode *node, ClothFace *face)
 {
-  return check_abcd(node->x0,
-                    face->v[0]->node->x0,
-                    face->v[1]->node->x0,
-                    face->v[2]->node->x0,
-                    node->x,
-                    face->v[0]->node->x,
-                    face->v[1]->node->x,
-                    face->v[2]->node->x);
+  const ClothNode *f_n0 = static_cast<ClothNode *>(face->v[0]->node);
+  const ClothNode *f_n1 = static_cast<ClothNode *>(face->v[1]->node);
+  const ClothNode *f_n2 = static_cast<ClothNode *>(face->v[2]->node);
+  return check_abcd(node->x0, f_n0->x0, f_n1->x0, f_n2->x0, node->x, f_n0->x, f_n1->x, f_n2->x);
 }
 
 void Simulation::getPenetrations(vector<Vec3> &r_penetrations)
@@ -269,7 +275,7 @@ void Simulation::getPenetrations(vector<Vec3> &r_penetrations)
   }
 
   for (int i = 0; i < num_nodes; i++) {
-    ClothNode *node = mesh->nodes[i];
+    const ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
     for (int om = 0; om < obstacle_meshes.size(); om++) {
       Sphere *ob_mesh = obstacle_meshes[om];
       Vec3 n;
@@ -287,7 +293,7 @@ void Simulation::resolvePenetrations(vector<Vec3> &penetrations)
   const int num_nodes = mesh->nodes.size();
   assert(num_nodes == penetrations.size());
   for (int i = 0; i < num_nodes; i++) {
-    ClothNode *node = mesh->nodes[i];
+    ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
     node->x -= penetrations[i];
     node->v = (node->x - node->x0) / h;
   }
@@ -313,30 +319,30 @@ void Simulation::update()
 
 static void getAdjNode(const ClothEdge *edge, ClothNode **r_n1, ClothNode **r_n2)
 {
-  const ClothFace *f1 = edge->adj_f[0];
-  const ClothFace *f2 = edge->adj_f[1];
+  const ClothFace *f1 = static_cast<ClothFace *>(edge->adj_f[0]);
+  const ClothFace *f2 = static_cast<ClothFace *>(edge->adj_f[1]);
 
   if (f1) {
     if (f1->v[0]->node != edge->n[0] && f1->v[0]->node != edge->n[1]) {
-      *r_n1 = f1->v[0]->node;
+      *r_n1 = static_cast<ClothNode *>(f1->v[0]->node);
     }
     else if (f1->v[1]->node != edge->n[0] && f1->v[1]->node != edge->n[1]) {
-      *r_n1 = f1->v[1]->node;
+      *r_n1 = static_cast<ClothNode *>(f1->v[1]->node);
     }
     else if (f1->v[2]->node != edge->n[0] && f1->v[2]->node != edge->n[1]) {
-      *r_n1 = f1->v[2]->node;
+      *r_n1 = static_cast<ClothNode *>(f1->v[2]->node);
     }
   }
 
   if (f2) {
     if (f2->v[0]->node != edge->n[0] && f2->v[0]->node != edge->n[1]) {
-      *r_n2 = f2->v[0]->node;
+      *r_n2 = static_cast<ClothNode *>(f2->v[0]->node);
     }
     else if (f2->v[1]->node != edge->n[0] && f2->v[1]->node != edge->n[1]) {
-      *r_n2 = f2->v[1]->node;
+      *r_n2 = static_cast<ClothNode *>(f2->v[1]->node);
     }
     else if (f2->v[2]->node != edge->n[0] && f2->v[2]->node != edge->n[1]) {
-      *r_n2 = f2->v[2]->node;
+      *r_n2 = static_cast<ClothNode *>(f2->v[2]->node);
     }
   }
 }
@@ -349,7 +355,7 @@ void Simulation::setConstraints()
    * bending springs, etc. */
   const int num_edges = mesh->edges.size();
   for (int i = 0; i < num_edges; i++) {
-    const ClothEdge *edge = mesh->edges[i];
+    const ClothEdge *edge = static_cast<ClothEdge *>(mesh->edges[i]);
 
     double rest_length = norm(edge->n[0]->x - edge->n[1]->x);
     SpringConstraint *c = new SpringConstraint(
@@ -479,8 +485,8 @@ void Simulation::drawConstraints(glm::mat4 &projection,
   for (int i = 0; i < num_constraints; i++) {
     SpringConstraint *sc;
     if (sc = dynamic_cast<SpringConstraint *>(constraints[i])) {
-      const ClothNode *node1 = mesh->nodes[sc->getP1()];
-      const ClothNode *node2 = mesh->nodes[sc->getP2()];
+      const ClothNode *node1 = static_cast<ClothNode *>(mesh->nodes[sc->getP1()]);
+      const ClothNode *node2 = static_cast<ClothNode *>(mesh->nodes[sc->getP2()]);
       if (sc->getStiffnessPointer() == &stiffness_stretch && draw_stretch) {
         pos_stretch.push_back(glm::vec3(node1->x[0], node1->x[1], node1->x[2]));
         pos_stretch.push_back(glm::vec3(node2->x[0], node2->x[1], node2->x[2]));

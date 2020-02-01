@@ -83,7 +83,7 @@ int main()
   Shader light_shader("shaders/light.vert", "shaders/light.frag");
   ClothMesh mesh;
   mesh.loadObj("something.obj");
-  ClothMesh light;
+  Mesh light;
   light.loadObj("light.obj");
   Simulation simulation(&mesh);
   Sphere ob_mesh(0.3, Vec3(0, -0.5, 0));

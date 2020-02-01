@@ -98,7 +98,7 @@ class PinConstraint : public Constraint {
   void draw(glm::mat4 &projection, glm::mat4 &view)
   {
     static Shader sphere_shader("shaders/sphere.vert", "shaders/sphere.frag");
-    static ClothMesh sphere_mesh("sphere.obj");
+    static Mesh sphere_mesh("sphere.obj");
     sphere_shader.use();
     sphere_shader.setMat4("projection", projection);
     sphere_shader.setMat4("view", view);

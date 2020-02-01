@@ -1,5 +1,5 @@
-#ifndef MESH_HPP
-#define MESH_HPP
+#ifndef CLOTH_MESH_HPP
+#define CLOTH_MESH_HPP
 
 #include <vector>
 #include <cassert>
@@ -10,7 +10,7 @@
 
 #include "math.hpp"
 #include "misc.hpp"
-#include "opengl_mesh.hpp"
+#include "mesh.hpp"
 
 using namespace std;
 
@@ -26,117 +26,75 @@ class ClothMesh;
  * Generally ClothNode would be called a vertex */
 
 /* Stores the UV information and corresponding World Space Node */
-class ClothVert {
+class ClothVert : public Vert {
  public:
-  vector<ClothFace *> adj_f; /* reference to adjacent faces wrt to the
-                                UV space */
-  ClothNode *node;           /*reference to node of vert */
-  int index;                 /* position in ClothMesh.verts */
-  Vec3 uv;                   /* UV coordinates of vert, stored as Vec3 for easier
-                              * calculation */
-  Mat3x3 sizing;             /* sizing information for the remeshing
-                              * step */
+  Mat3x3 sizing; /* sizing information for the remeshing
+                  * step */
 
-  ClothVert() : node(0), index(-1)
+  ClothVert() : Vert()
   {
   }
-  ClothVert(const Vec3 &u) : uv(u)
+  ClothVert(const Vec3 &uv) : Vert(uv)
   {
   }
 };
 
 /* Stores the World Space coordinates */
-class ClothNode {
+class ClothNode : public Node {
  public:
-  vector<ClothVert *> verts; /* This helps in storing all the
-                              * references to the UV's of
-                              * the Node */
-  vector<ClothEdge *> adj_e; /* reference to adjacent edges of the
-                              * node */
-  int index;                 /* position in ClothMesh.nodes */
-  Vec3 x;                    /* world space position of node */
-  Vec3 x0;                   /* previous world space position of node */
-  Vec3 v;                    /* world space velocity of node */
-  Vec3 n;                    /* world space normal */
+  Vec3 x0; /* previous world space position of node */
+  Vec3 v;  /* world space velocity of node */
 
-  ClothNode() : index(-1)
+  ClothNode() : Node()
   {
   }
-  ClothNode(const Vec3 &x, const Vec3 &v) : x(x), x0(x), v(v)
+  ClothNode(const Vec3 &x, const Vec3 &v) : Node(x), x0(x), v(v)
   {
   }
-  ClothNode(const Vec3 &x, const Vec3 &v, const Vec3 &n) : x(x), x0(x), v(v), n(n)
+  ClothNode(const Vec3 &x, const Vec3 &v, const Vec3 &n) : Node(x, n), x0(x), v(v)
   {
   }
 };
 
-/* Stores the Edge data */
-class ClothEdge {
+/* Stores the ClothEdge data */
+class ClothEdge : public Edge {
  public:
-  ClothNode *n[2];     /* reference to nodes of edge */
-  ClothFace *adj_f[2]; /* reference to adjacent faces of edge */
-  int index;           /*position in ClothMesh.edges */
-
-  ClothEdge() : index(-1)
+  ClothEdge() : Edge()
   {
   }
 
-  ClothEdge(ClothNode *n0, ClothNode *n1)
+  ClothEdge(ClothNode *n0, ClothNode *n1) : Edge(n0, n1)
   {
-    n[0] = n0;
-    n[1] = n1;
   }
 };
 
-/* Stores the Face data */
+/* Stores the ClothFace data */
 /* Only triangles */
-class ClothFace {
+class ClothFace : public Face {
  public:
-  ClothVert *v[3];     /* reference to verts of the face */
-  ClothEdge *adj_e[3]; /* reference to adjacent edges of the face */
-  int index;           /* position in ClothMesh.faces */
-  Vec3 n;              /* normal */
-
   double area, mass;
   Mat3x3 dm, dm_inv; /* required data for remeshing step */
 
-  ClothFace() : index(-1), area(0.0f), mass(0.0f)
+  ClothFace() : Face(), area(0.0f), mass(0.0f)
   {
-    for (int i = 0; i < 3; i++) {
-      v[i] = NULL;
-      adj_e[i] = NULL;
-    }
   }
 
-  ClothFace(ClothVert *v0, ClothVert *v1, ClothVert *v2)
+  ClothFace(ClothVert *v0, ClothVert *v1, ClothVert *v2) : Face(v0, v1, v2)
   {
-    v[0] = v0;
-    v[1] = v1;
-    v[2] = v2;
   }
 };
 
-/* Stores the overall Mesh data */
-class ClothMesh {
+/* Stores the overall ClothMesh data */
+class ClothMesh : public Mesh {
  private:
-  void setIndices();
-  GLMesh convertToGLMesh();
-  void deleteMesh();
-
  public:
-  ClothMesh()
+  ClothMesh() : Mesh()
   {
   }
 
-  ClothMesh(const string &filename)
+  ClothMesh(const string &filename) : Mesh(filename)
   {
-    loadObj(filename);
   }
-
-  vector<ClothVert *> verts;
-  vector<ClothNode *> nodes;
-  vector<ClothEdge *> edges;
-  vector<ClothFace *> faces;
 
   EigenSparseMatrix mass_matrix;     /* TODO(ish): initialize this */
   EigenSparseMatrix identity_matrix; /* TODO(ish): initialize this */
@@ -152,15 +110,9 @@ class ClothMesh {
   void remove(ClothFace *face);
 
   void loadObj(const string &file);
-  void saveObj(const string &filename);
-
-  void shadeSmooth();
-
-  void draw();
 
   ~ClothMesh()
   {
-    deleteMesh();
   }
 };
 
@@ -295,7 +247,7 @@ class Sphere {
 inline ClothEdge *getEdge(const ClothNode *n0, const ClothNode *n1)
 {
   for (int i = 0; i < (int)n0->adj_e.size(); i++) {
-    ClothEdge *edge = n0->adj_e[i];
+    ClothEdge *edge = static_cast<ClothEdge *>(n0->adj_e[i]);
     if (edge->n[0] == n1 || edge->n[1] == n1) {
       return edge;
     }
