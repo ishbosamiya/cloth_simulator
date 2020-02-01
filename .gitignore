@@ -9,3 +9,5 @@ GTAGS
 temp/
 *.obj
 *.bak
+.gdb_history
+peda-session*.*
