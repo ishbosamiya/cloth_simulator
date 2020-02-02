@@ -92,8 +92,35 @@ class ClothMesh : public Mesh {
   {
   }
 
-  ClothMesh(const string &filename) : Mesh(filename)
+  ClothMesh(const string &filename)
   {
+    loadObj(filename);
+  }
+
+  ClothMesh(const string &filename, Shader *shader) : Mesh(shader)
+  {
+    loadObj(filename);
+  }
+
+  ClothMesh(const string &filename, Vec3 pos) : Mesh(pos)
+  {
+    loadObj(filename);
+  }
+
+  ClothMesh(const string &filename, Vec3 pos, Shader *shader) : Mesh(pos, shader)
+  {
+    loadObj(filename);
+  }
+
+  ClothMesh(const string &filename, Vec3 pos, Vec3 scale) : Mesh(pos, scale)
+  {
+    loadObj(filename);
+  }
+
+  ClothMesh(const string &filename, Vec3 pos, Vec3 scale, Shader *shader)
+      : Mesh(pos, scale, shader)
+  {
+    loadObj(filename);
   }
 
   EigenSparseMatrix mass_matrix;     /* TODO(ish): initialize this */

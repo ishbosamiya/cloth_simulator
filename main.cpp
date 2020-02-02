@@ -77,19 +77,16 @@ int main()
 
   glEnable(GL_DEPTH_TEST);
 
+  glm::vec3 light_dir(-0.7f, -1.0f, -0.7f);
   // build and compile our shader program
   Shader directional_light_shader("shaders/directional_light.vert",
                                   "shaders/directional_light.frag");
   Shader light_shader("shaders/light.vert", "shaders/light.frag");
-  ClothMesh mesh;
-  mesh.loadObj("something.obj");
-  Mesh light;
-  light.loadObj("light.obj");
+  ClothMesh mesh("something.obj", &directional_light_shader);
+  Mesh light("light.obj", glmVec3ToVec3(light_dir * glm::vec3(-2.2f)), Vec3(0.2), &light_shader);
   Simulation simulation(&mesh);
   Sphere ob_mesh(0.3, Vec3(0, -0.5, 0), &directional_light_shader);
   simulation.addObstacleMesh(&ob_mesh);
-
-  glm::vec3 light_pos(1.0f, 1.0f, 1.0f);
 
   // render loop
   unsigned int frame_count = 0;
@@ -137,7 +134,6 @@ int main()
     glm::vec3 specular(0.3f);
     directional_light_shader.setVec3("material.specular", specular);
     directional_light_shader.setFloat("material.shininess", 4.0f);
-    glm::vec3 light_dir(-0.7f, -1.0f, -0.7f);
     directional_light_shader.setVec3("light.direction", light_dir);
     directional_light_shader.setVec3("light.ambient", 0.3f, 0.3f, 0.3f);
     directional_light_shader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
@@ -149,18 +145,11 @@ int main()
     directional_light_shader.setMat4("projection", projection);
     directional_light_shader.setMat4("view", view);
 
-    glm::mat4 model = glm::mat4(1.0f);
-    directional_light_shader.setMat4("model", model);
-
     mesh.draw();
 
     light_shader.use();
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, light_dir * glm::vec3(-2.2f));
-    model = glm::scale(model, glm::vec3(0.2f));
     light_shader.setMat4("projection", projection);
     light_shader.setMat4("view", view);
-    light_shader.setMat4("model", model);
 
     light.draw();
 

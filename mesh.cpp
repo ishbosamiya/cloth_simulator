@@ -321,6 +321,7 @@ void Mesh::shadeSmooth()
 
 void Mesh::draw()
 {
+  setShaderModelMatrix();
   GLMesh gl_mesh = convertToGLMesh();
   gl_mesh.draw();
 }

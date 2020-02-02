@@ -11,6 +11,7 @@
 #include "math.hpp"
 #include "misc.hpp"
 #include "opengl_mesh.hpp"
+#include "primitives.hpp"
 
 using namespace std;
 
@@ -110,7 +111,7 @@ class Face {
 };
 
 /* Stores the overall Mesh data */
-class Mesh {
+class Mesh : public Primitive {
  private:
   void setIndices();
   GLMesh convertToGLMesh();
@@ -124,6 +125,52 @@ class Mesh {
   Mesh(const string &filename)
   {
     Mesh::loadObj(filename);
+  }
+
+  Mesh(const string &filename, Shader *shader) : Primitive(shader)
+  {
+    Mesh::loadObj(filename);
+  }
+
+  Mesh(const string &filename, Vec3 pos) : Primitive(pos)
+  {
+    Mesh::loadObj(filename);
+  }
+
+  Mesh(const string &filename, Vec3 pos, Shader *shader) : Primitive(pos, shader)
+  {
+    Mesh::loadObj(filename);
+  }
+
+  Mesh(const string &filename, Vec3 pos, Vec3 scale) : Primitive(pos, scale)
+  {
+    Mesh::loadObj(filename);
+  }
+
+  Mesh(const string &filename, Vec3 pos, Vec3 scale, Shader *shader)
+      : Primitive(pos, scale, shader)
+  {
+    Mesh::loadObj(filename);
+  }
+
+  Mesh(Shader *shader) : Primitive(shader)
+  {
+  }
+
+  Mesh(Vec3 pos) : Primitive(pos)
+  {
+  }
+
+  Mesh(Vec3 pos, Shader *shader) : Primitive(pos, shader)
+  {
+  }
+
+  Mesh(Vec3 pos, Vec3 scale) : Primitive(pos, scale)
+  {
+  }
+
+  Mesh(Vec3 pos, Vec3 scale, Shader *shader) : Primitive(pos, scale, shader)
+  {
   }
 
   vector<Vert *> verts;
@@ -146,7 +193,12 @@ class Mesh {
 
   void shadeSmooth();
 
-  void draw();
+  virtual void draw();
+
+  virtual bool intersectionTest(const Vec3 &p, Vec3 &r_normal, double &r_distance)
+  {
+    return false;
+  }
 
   ~Mesh()
   {

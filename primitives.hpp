@@ -32,6 +32,12 @@ class Primitive {
     shader = &defaultShader();
   }
 
+  Primitive(Shader *shader) : shader(shader)
+  {
+    pos = Vec3(0.0d, 0.0d, 0.0d);
+    scale = Vec3(1.0d, 1.0d, 1.0d);
+  }
+
   Primitive(Vec3 pos) : pos(pos)
   {
     scale = Vec3(1.0d, 1.0d, 1.0d);
