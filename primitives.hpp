@@ -1,111 +1,98 @@
 #ifndef PRIMITIVES_HPP
 #define PRIMITIVES_HPP
 
+#include <iostream>
+
 #include "opengl_mesh.hpp"
 #include "math.hpp"
+#include "shader.hpp"
 
-#define PI 3.141592653
-class Sphere {
+using namespace std;
+
+class Primitive {
+ protected:
+  inline void setShaderModelMatrix()
+  {
+    shader->use();
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, vec3ToGlmVec3(pos));
+    model = glm::scale(model, vec3ToGlmVec3(scale));
+    shader->setMat4("model", model);
+  }
+
+ public:
+  Vec3 pos;   /* Pos of primitive in world space */
+  Vec3 scale; /* Scale of primitive in world space */
+  Shader *shader;
+
+  Primitive()
+  {
+    pos = Vec3(0.0d, 0.0d, 0.0d);
+    scale = Vec3(1.0d, 1.0d, 1.0d);
+    shader = &defaultShader();
+  }
+
+  Primitive(Vec3 pos) : pos(pos)
+  {
+    scale = Vec3(1.0d, 1.0d, 1.0d);
+    shader = &defaultShader();
+  }
+
+  Primitive(Vec3 pos, Shader *shader) : pos(pos), shader(shader)
+  {
+    scale = Vec3(1.0d, 1.0d, 1.0d);
+  }
+
+  Primitive(Vec3 pos, Vec3 scale) : pos(pos), scale(scale)
+  {
+    shader = &defaultShader();
+  }
+
+  Primitive(Vec3 pos, Vec3 scale, Shader *shader) : pos(pos), scale(scale), shader(shader)
+  {
+  }
+
+  void setScale(Vec3 scale)
+  {
+    this->scale = scale;
+  }
+
+  void setPos(Vec3 pos)
+  {
+    this->pos = pos;
+  }
+
+  /* Ensure setShaderModelMatrix() is called within draw() to ensure
+     the correct position and scaling is applied while drawing the mesh */
+  virtual void draw()
+  {
+    cout << "warning: reached <Primitive> base class virtual function: " << __func__ << endl;
+  }
+
+  /* Ensure position and scaling is taken into account while doing the
+     intersection test */
+  virtual bool intersectionTest(const Vec3 &p, Vec3 &r_normal, double &r_distance)
+  {
+    cout << "warning: reached <Primitive> base class virtual function: " << __func__ << endl;
+  }
+};
+
+class Sphere : public Primitive {
+ private:
+  void storeAsMesh();
+
  public:
   double radius;
-  Vec3 position;
   GLMesh *mesh;
 
-  Sphere(double radius, Vec3 position) : radius(radius), position(position)
+  Sphere(double radius, Vec3 pos) : Primitive(pos), radius(radius)
   {
     storeAsMesh();
   }
 
-  void storeAsMesh()
+  Sphere(double radius, Vec3 pos, Shader *shader) : Primitive(pos, shader), radius(radius)
   {
-    vector<GLVertex> verts;
-    vector<unsigned int> indices;
-    int stacks = 16;
-    int slices = 32;
-    int indices_count = 0;
-    for (int t = 0; t < stacks; t++) {
-      double theta1 = ((double)(t) / stacks) * PI;
-      double theta2 = ((double)(t + 1) / stacks) * PI;
-      for (int p = 0; p < slices; p++) {
-        double phi1 = ((double)(p) / slices) * 2 * PI;
-        double phi2 = ((double)(p + 1) / slices) * 2 * PI;
-
-        GLVertex v1;
-        GLVertex v2;
-        GLVertex v3;
-        GLVertex v4;
-
-        v1.x = glm::vec3(radius * sin(theta1) * cos(phi1),
-                         radius * sin(theta1) * sin(phi1),
-                         radius * cos(theta1)) +
-               glm::vec3(position[0], position[1], position[2]);
-
-        v2.x = glm::vec3(radius * sin(theta1) * cos(phi2),
-                         radius * sin(theta1) * sin(phi2),
-                         radius * cos(theta1)) +
-               glm::vec3(position[0], position[1], position[2]);
-
-        v3.x = glm::vec3(radius * sin(theta2) * cos(phi2),
-                         radius * sin(theta2) * sin(phi2),
-                         radius * cos(theta2)) +
-               glm::vec3(position[0], position[1], position[2]);
-
-        v4.x = glm::vec3(radius * sin(theta2) * cos(phi1),
-                         radius * sin(theta2) * sin(phi1),
-                         radius * cos(theta2)) +
-               glm::vec3(position[0], position[1], position[2]);
-
-        verts.push_back(v1);
-        verts.push_back(v2);
-        verts.push_back(v3);
-        verts.push_back(v4);
-
-        if (t == 0) {
-          indices.push_back(indices_count + 0);
-          indices.push_back(indices_count + 2);
-          indices.push_back(indices_count + 3);
-        }
-        else if (t + 1 == stacks) {
-          indices.push_back(indices_count + 2);
-          indices.push_back(indices_count + 0);
-          indices.push_back(indices_count + 1);
-        }
-        else {
-          indices.push_back(indices_count + 0);
-          indices.push_back(indices_count + 1);
-          indices.push_back(indices_count + 3);
-
-          indices.push_back(indices_count + 1);
-          indices.push_back(indices_count + 2);
-          indices.push_back(indices_count + 3);
-        }
-        indices_count += 4;
-      }
-    }
-
-    vector<glm::vec3> normals;
-    normals.resize(verts.size());
-    for (int i = 0; i < normals.size(); i++) {
-      normals[i] = glm::vec3(0, 0, 0);
-    }
-
-    for (int i = 0; i < indices.size(); i = i + 3) {
-      GLVertex v0 = verts[indices[i + 0]];
-      GLVertex v1 = verts[indices[i + 1]];
-      GLVertex v2 = verts[indices[i + 2]];
-
-      glm::vec3 n = glm::cross(v2.x - v0.x, v1.x - v0.x);
-
-      normals[indices[i + 0]] += n;
-      normals[indices[i + 1]] += n;
-      normals[indices[i + 2]] += n;
-    }
-
-    for (int i = 0; i < verts.size(); i++) {
-      verts[i].n = glm::normalize(normals[i]);
-    }
-
-    mesh = new GLMesh(verts, indices);
+    storeAsMesh();
   }
 
   ~Sphere()
@@ -117,8 +104,8 @@ class Sphere {
 
   bool intersectionTest(const Vec3 &p, Vec3 &r_normal, double &r_distance)
   {
-    Vec3 diff = p - position;
-    r_distance = norm(diff) - radius - 1e-6;
+    Vec3 diff = p - pos;
+    r_distance = norm(diff) - (radius * scale[0]) - 1e-6;
     if (r_distance < 0) {
       r_normal = normalize(diff);
       return true;
@@ -128,6 +115,7 @@ class Sphere {
 
   void draw()
   {
+    setShaderModelMatrix();
     mesh->draw();
   }
 };

@@ -11,6 +11,8 @@
 
 #include <glm/glm.hpp>
 
+#define PI 3.141592653
+
 /* Vec defines a column vector of size n */
 template<int n, typename T = double> class Vec {
  private:
@@ -626,6 +628,16 @@ inline Vec3 eigenToVec3(const EigenVec3 &v)
 inline EigenVec3 vec3ToEigen(const Vec3 &v)
 {
   return EigenVec3(v[0], v[1], v[2]);
+}
+
+inline glm::vec3 vec3ToGlmVec3(const Vec3 &v)
+{
+  return glm::vec3(v[0], v[1], v[2]);
+}
+
+inline Vec3 glmVec3ToVec3(const glm::vec3 &v)
+{
+  return Vec3(v[0], v[1], v[2]);
 }
 
 #endif

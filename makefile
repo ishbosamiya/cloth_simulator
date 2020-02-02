@@ -9,7 +9,7 @@ else
 endif
 
 GL_FLAGS = -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl
-OBJS = glad.o main.o cloth_mesh.o constraint.o simulation.o mesh.o
+OBJS = glad.o main.o cloth_mesh.o constraint.o simulation.o mesh.o primitives.o
 PROJECT_NAME = cloth_simulator
 
 ifeq (${mode}, debug)
@@ -36,6 +36,8 @@ simulation.o:
 	${CC} ${INCLUDES} ${FLAGS} -c simulation.cpp -o $@ ${GL_FLAGS}
 mesh.o:
 	${CC} ${INCLUDES} ${FLAGS} -c mesh.cpp -o $@ ${GL_FLAGS}
+primitives.o:
+	${CC} ${INCLUDES} ${FLAGS} -c primitives.cpp -o $@ ${GL_FLAGS}
 
 .PHONEY: clean clean_emacs_files clean_all
 clean:

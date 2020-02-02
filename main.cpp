@@ -86,7 +86,7 @@ int main()
   Mesh light;
   light.loadObj("light.obj");
   Simulation simulation(&mesh);
-  Sphere ob_mesh(0.3, Vec3(0, -0.5, 0));
+  Sphere ob_mesh(0.3, Vec3(0, -0.5, 0), &directional_light_shader);
   simulation.addObstacleMesh(&ob_mesh);
 
   glm::vec3 light_pos(1.0f, 1.0f, 1.0f);
@@ -126,6 +126,11 @@ int main()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // use shader
+    /* TODO(ish): update all shaders, design a better system to do
+       this */
+    defaultShader().use();
+    defaultShader().setMat4("projection", camera.getProjectionMatrix());
+    defaultShader().setMat4("view", camera.getViewMatrix());
     directional_light_shader.use();
     directional_light_shader.setVec3("viewPos", camera.position);
     directional_light_shader.setVec3("material.color", 0.3f, 0.2f, 0.7f);
@@ -159,10 +164,8 @@ int main()
 
     light.draw();
 
-    model = glm::mat4(1.0f);
     directional_light_shader.use();
     directional_light_shader.setVec3("material.color", 0.7f, 0.5f, 0.5f);
-    directional_light_shader.setMat4("model", model);
     ob_mesh.draw();
 
     if (!simulation_pause) {

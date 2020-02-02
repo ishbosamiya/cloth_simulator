@@ -71,7 +71,7 @@ class Simulation {
  public:
   Simulation(ClothMesh *mesh) : mesh(mesh)
   {
-    h = 0.03333d;
+    h = 0.03333d * 0.2;
     stiffness_stretch = 80.0d * 10;
     stiffness_pin = 120.0d * 10;
     stiffness_bending = 20.0d * 10;

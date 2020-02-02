@@ -150,4 +150,10 @@ class Shader {
   }
 };
 
+static Shader &defaultShader()
+{
+  static Shader default_shader("shaders/default.vert", "shaders/default.frag");
+  return default_shader;
+}
+
 #endif
