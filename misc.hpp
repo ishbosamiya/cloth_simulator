@@ -4,6 +4,9 @@
 #include <vector>
 #include <limits>
 #include <algorithm>
+#include <cstdlib>
+
+#include "math.hpp"
 
 using namespace std;
 
@@ -141,6 +144,18 @@ template<typename T> inline bool subset(const vector<T> &xs, const vector<T> &ys
 template<typename T> inline void append(vector<T> &xs, const vector<T> &ys)
 {
   xs.insert(xs.end(), ys.begin(), ys.end());
+}
+
+/* TODO(ish): implement a better random generator, maybe use the cpp
+ * random value generator instead of srand(), rand() */
+inline double randomZeroOne()
+{
+  return (double)(rand()) / (double)(INT_MAX);
+}
+
+inline Vec3 randomUnitVector()
+{
+  return normalize(Vec3(randomZeroOne(), randomZeroOne(), randomZeroOne()));
 }
 
 #endif

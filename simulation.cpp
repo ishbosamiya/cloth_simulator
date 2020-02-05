@@ -14,7 +14,7 @@ void Simulation::calculateInertiaY()
 
 void Simulation::calculateExternalForces()
 {
-  /* TODO(ish): only gravity supported at the moment, add support for
+  /* TODO(ish): only gravity and wind supported at the moment, add support for
    * more later */
   const int num_nodes = mesh->nodes.size();
   external_forces.resize(num_nodes * 3);
@@ -22,6 +22,9 @@ void Simulation::calculateExternalForces()
 
   for (int i = 0; i < num_nodes; i++) {
     external_forces[3 * i + 1] += -gravity_constant;
+    external_forces.block_vector(i) += vec3ToEigen(wind_strength * wind_direction);
+    external_forces.block_vector(i) += vec3ToEigen(randomZeroOne() * turbulence *
+                                                   randomUnitVector());
   }
 
   external_forces = mesh->mass_matrix * external_forces;

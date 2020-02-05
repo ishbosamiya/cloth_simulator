@@ -7,6 +7,7 @@
 #include "cloth_mesh.hpp"
 #include "math.hpp"
 #include "constraint.hpp"
+#include "misc.hpp"
 
 using namespace std;
 
@@ -42,6 +43,9 @@ class Simulation {
   double stiffness_pin;
   double stiffness_bending;
   double damping_coefficient;
+  Vec3 wind_direction;
+  double wind_strength;
+  double turbulence;
 
   void calculateInertiaY();
   void calculateExternalForces();
@@ -78,6 +82,9 @@ class Simulation {
     gravity_constant = 9.8d;
     damping_coefficient = 0.001;
     iterations_per_frame = 10;
+    wind_direction = normalize(Vec3(1.0, 0, 0));
+    wind_strength = 5.0d;
+    turbulence = 5.0d;
 
     obstacle_meshes.clear();
 
