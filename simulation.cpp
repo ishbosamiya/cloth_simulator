@@ -20,11 +20,14 @@ void Simulation::calculateExternalForces()
   external_forces.resize(num_nodes * 3);
   external_forces.setZero();
 
+  bool wind = false;
   for (int i = 0; i < num_nodes; i++) {
     external_forces[3 * i + 1] += -gravity_constant;
-    external_forces.block_vector(i) += vec3ToEigen(wind_strength * wind_direction);
-    external_forces.block_vector(i) += vec3ToEigen(randomZeroOne() * turbulence *
-                                                   randomUnitVector());
+    if (wind) {
+      external_forces.block_vector(i) += vec3ToEigen(wind_strength * wind_direction);
+      external_forces.block_vector(i) += vec3ToEigen(randomZeroOne() * turbulence *
+                                                     randomUnitVector());
+    }
   }
 
   external_forces = mesh->mass_matrix * external_forces;
@@ -258,47 +261,83 @@ static inline bool check_vf(ClothNode *node, ClothFace *face)
   return check_abcd(node->x0, f_n0->x0, f_n1->x0, f_n2->x0, node->x, f_n0->x, f_n1->x, f_n2->x);
 }
 
-void Simulation::getPenetrations(vector<Vec3> &r_penetrations)
+/* TODO(ish): currently is only for cloth's nodes checked with the
+ * stationary obstacle's faces, this is not enough, need to do all
+ * vf and ee checks
+ *
+ * ee checks not being done yet */
+static bool checkProximity(ClothNode *n, Face *f, Vec3 &r_bary_coords)
 {
-  /* TODO(ish): simple implementation for now, just interpolate until
-   * half the distance if there is a penetration,
-   * ie. r_penetrations[i] = ((nodes[i]->x + nodes[i]->x0) * 0.5)
-   * otherwise set
-   * r_penetrations[i] = nodes[i]->x */
-  const int num_nodes = mesh->nodes.size();
-  r_penetrations.clear();
-  r_penetrations.resize(num_nodes);
+  Vec3 x1, x2, x3, x4;
+  x4 = n->x0;
+  x1 = f->v[0]->node->x;
+  x2 = f->v[1]->node->x;
+  x3 = f->v[2]->node->x;
 
-  for (int i = 0; i < num_nodes; i++) {
-    r_penetrations[i] = Vec3(0, 0, 0);
+  Vec3 x43 = x4 - x3;
+  Vec3 x13 = x1 - x3;
+  Vec3 x23 = x2 - x3;
+  Vec3 normal = cross(x13, x23);
+  if (norm(dot(x43, normal)) > 0.001d) { /* This is the cloth thickness */
+    return false;
   }
 
-  if (obstacle_meshes.size() == 0) {
-    return;
+  double a = dot(x13, x13);
+  double b = dot(x13, x23);
+  double c = b;
+  double d = dot(x23, x23);
+  Mat2x2 m_inv(Vec2(a, c), Vec2(b, d));
+  m_inv = (1.0d / (a * d - b * c)) * m_inv;
+  Vec2 w_1_2 = m_inv * Vec2(dot(x13, x43), dot(x23, x43));
+
+  r_bary_coords = Vec3(w_1_2[0], w_1_2[1], 1.0d - w_1_2[0] - w_1_2[1]);
+
+  if (max(r_bary_coords) > 1.0d) {
+    /* TODO(ish): this check should be with the cloth thickness by the
+     * characteristic length of the triangle */
+    return false;
   }
 
-  for (int i = 0; i < num_nodes; i++) {
-    const ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
-    for (int om = 0; om < obstacle_meshes.size(); om++) {
-      Sphere *ob_mesh = obstacle_meshes[om];
-      Vec3 n;
-      double distance;
-      if (ob_mesh->intersectionTest(node->x, n, distance)) {
-        r_penetrations[i] += distance * n;
+  return true;
+}
+
+static bool checkProximity(ClothFace *f1, Face *f2)
+{
+  Vec3 bary_coords;
+  bool got_proximity = false;
+  for (int i = 0; i < 3; i++) {
+    ClothNode *n = static_cast<ClothNode *>(f1->v[i]->node);
+    if (checkProximity(n, f2, bary_coords)) {
+      got_proximity = true;
+    }
+  }
+  if (got_proximity) {
+    return true;
+  }
+  return false;
+}
+
+void Simulation::solveCollisions(Mesh *ob_mesh)
+{
+  int count = 0;
+  for (int i = 0; i < mesh->faces.size(); i++) {
+    ClothFace *fm = static_cast<ClothFace *>(mesh->faces[i]);
+    for (int j = 0; j < ob_mesh->faces.size(); j++) {
+      Face *fo = ob_mesh->faces[j];
+      if (checkProximity(fm, fo)) {
+        count++;
       }
     }
   }
+  cout << "count: " << count << " ob_mesh->faces.size(): " << ob_mesh->faces.size()
+       << " mesh->faces.size(): " << mesh->faces.size()
+       << " mesh->nodes.size(): " << mesh->nodes.size() << endl;
 }
 
-void Simulation::resolvePenetrations(vector<Vec3> &penetrations)
+void Simulation::solveCollisions()
 {
-  /* TODO(ish): simple implementation for now. Only testing */
-  const int num_nodes = mesh->nodes.size();
-  assert(num_nodes == penetrations.size());
-  for (int i = 0; i < num_nodes; i++) {
-    ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
-    node->x -= penetrations[i];
-    node->v = (node->x - node->x0) / h;
+  for (int i = 0; i < obstacle_meshes.size(); i++) {
+    solveCollisions(obstacle_meshes[i]);
   }
 }
 
@@ -311,9 +350,7 @@ void Simulation::update()
   integrateOptimization();
 
   /* TODO(ish): collision detection, adaptive remeshing */
-  vector<Vec3> penetrations;
-  getPenetrations(penetrations);
-  resolvePenetrations(penetrations);
+  solveCollisions();
 
   dampVelocity();
 

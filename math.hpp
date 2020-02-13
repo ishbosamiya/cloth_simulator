@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cassert>
 #include <cmath>
+#include <algorithm>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -220,6 +221,26 @@ nT std::ostream &operator<<(std::ostream &out, const VecnT &u)
   out << ")";
 
   return out;
+}
+
+nT T max(const VecnT &u)
+{
+  static_assert(n > 1, "Vec size must be > 1");
+  T m = std::max(u[0], u[1]);
+  for (int i = 2; i < n; i++) {
+    m = std::max(m, u[i]);
+  }
+  return m;
+}
+
+nT T min(const VecnT &u)
+{
+  static_assert(n > 1, "Vec size must be > 1");
+  T m = std::min(u[0], u[1]);
+  for (int i = 2; i < n; i++) {
+    m = std::min(m, u[i]);
+  }
+  return m;
 }
 
 #undef VecnT

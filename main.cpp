@@ -87,7 +87,8 @@ int main()
   ClothMesh mesh("something.obj", &directional_light_shader);
   Mesh light("light.obj", glmVec3ToVec3(light_dir * glm::vec3(-2.2f)), Vec3(0.2), &light_shader);
   Simulation simulation(&mesh);
-  Sphere ob_mesh(0.3, Vec3(0, -0.5, 0), &directional_light_shader);
+  /* Sphere ob_mesh(0.3, Vec3(0, -0.5, 0), &directional_light_shader); */
+  Mesh ob_mesh("sphere_scaled_low_poly.obj", &directional_light_shader);
   simulation.addObstacleMesh(&ob_mesh);
 
   // render loop

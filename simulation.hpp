@@ -21,10 +21,10 @@ class Simulation {
   double h; /* time step */
 
   ClothMesh *mesh;
-  vector<Sphere *> obstacle_meshes; /* TODO(ish): this is a
-                                     * Sphere reference for now but
-                                     * should be its own Mesh
-                                     * structure */
+  vector<Mesh *> obstacle_meshes; /* TODO(ish): this is a
+                                   * Sphere reference for now but
+                                   * should be its own Mesh
+                                   * structure */
 
   vector<Constraint *> constraints; /* Springs, pinning, etc. */
 
@@ -64,11 +64,11 @@ class Simulation {
   void integrateLocalGlobalOneIteration(EigenVecX &r_x, bool run_prefactorization);
   void integrateOptimization();
 
+  void solveCollisions(Mesh *ob_mesh);
+  void solveCollisions();
+
   void setConstraints();
   void clearConstraints();
-
-  void getPenetrations(vector<Vec3> &r_penetrations);
-  void resolvePenetrations(vector<Vec3> &penetrations);
 
   void dampVelocity();
 
@@ -110,7 +110,7 @@ class Simulation {
                        bool draw_stretch,
                        bool draw_bending);
 
-  void addObstacleMesh(Sphere *ob_mesh)
+  void addObstacleMesh(Mesh *ob_mesh)
   {
     obstacle_meshes.push_back(ob_mesh);
   }
