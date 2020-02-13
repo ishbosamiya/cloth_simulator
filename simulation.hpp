@@ -84,6 +84,9 @@ class Simulation {
 
   void dampVelocity();
 
+  void applyTransformations();
+  void unapplyTransformations();
+
  public:
   Simulation(ClothMesh *mesh) : mesh(mesh)
   {

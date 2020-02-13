@@ -304,6 +304,18 @@ template<int m, int n, typename T = double> class Mat {
     cols[3] = w;
   }
 
+  Mat(glm::mat4 mat)
+  {
+    static_assert(n == 4 && m == 4, "Matrix must be 4x4");
+    /* TODO(ish): test that the 2 are actually equal, there could be
+     * some issues due to the column based representation */
+    for (int i = 0; i < 4; i++) {
+      for (int j = 0; j < 4; j++) {
+        cols[i][j] = mat[i][j];
+      }
+    }
+  }
+
   static Mat rows(VecnT x, VecnT y)
   {
     Mat<2, n, T> M;
@@ -631,6 +643,7 @@ typedef Mat<2, 2> Mat2x2;
 typedef Mat<3, 3> Mat3x3;
 typedef Mat<3, 2> Mat3x2;
 typedef Mat<2, 3> Mat2x3;
+typedef Mat<4, 4> Mat4x4;
 
 /* Eigen Declarations */
 typedef Eigen::Matrix<double, 3, 3, 0, 3, 3> EigenMat3;
@@ -657,6 +670,11 @@ inline glm::vec3 vec3ToGlmVec3(const Vec3 &v)
 }
 
 inline Vec3 glmVec3ToVec3(const glm::vec3 &v)
+{
+  return Vec3(v[0], v[1], v[2]);
+}
+
+inline Vec3 glmVec4ToVec3(const glm::vec4 &v)
 {
   return Vec3(v[0], v[1], v[2]);
 }
