@@ -266,7 +266,7 @@ static inline bool check_vf(ClothNode *node, ClothFace *face)
  * vf and ee checks
  *
  * ee checks not being done yet */
-static bool checkProximity(ClothNode *n, Face *f, Vec3 &r_bary_coords)
+bool Simulation::checkProximity(ClothNode *n, Face *f, Vec3 &r_bary_coords)
 {
   Vec3 x1, x2, x3, x4;
   x4 = n->x0;
@@ -277,8 +277,9 @@ static bool checkProximity(ClothNode *n, Face *f, Vec3 &r_bary_coords)
   Vec3 x43 = x4 - x3;
   Vec3 x13 = x1 - x3;
   Vec3 x23 = x2 - x3;
-  Vec3 normal = cross(x13, x23);
-  if (norm(dot(x43, normal)) > 0.001d) { /* This is the cloth thickness */
+  Vec3 area_vector = cross(x13, x23);
+  Vec3 normal = normalize(area_vector);
+  if (norm(dot(x43, normal)) > cloth_thickness) {
     return false;
   }
 
@@ -292,16 +293,51 @@ static bool checkProximity(ClothNode *n, Face *f, Vec3 &r_bary_coords)
 
   r_bary_coords = Vec3(w_1_2[0], w_1_2[1], 1.0d - w_1_2[0] - w_1_2[1]);
 
-  if (max(r_bary_coords) > 1.0d) {
-    /* TODO(ish): this check should be with the cloth thickness by the
-     * characteristic length of the triangle */
+  double area = norm(area_vector) * 0.5d;
+  double delta = cloth_thickness / sqrt(area);
+  /* cout << "min(r_bary_coords): " << min(r_bary_coords) */
+  /*      << " max(r_bary_coords): " << max(r_bary_coords) << endl; */
+  if (max(r_bary_coords) > 1 + delta || min(r_bary_coords) < -delta) {
     return false;
   }
 
   return true;
 }
 
-static bool checkProximity(ClothFace *f1, Face *f2)
+double Simulation::findImpulse(const Vec3 &x1,
+                               const Vec3 &x2,
+                               const Vec3 &x3,
+                               const Vec3 &x4,
+                               const Vec3 &bary_coords,
+                               const Vec3 &normal,
+                               double v_n,
+                               double mass)
+{
+  double d = cloth_thickness -
+             dot((x4 - (bary_coords[0] * x1) - (bary_coords[1] * x2) - (bary_coords[2] * x3)),
+                 normal);
+  return -std::min(h * stiffness_stretch * d, mass * ((0.1 * d / h) - v_n));
+}
+
+void Simulation::applyRepulsion(ClothNode *n, Face *f, const Vec3 &bary_coords)
+{
+  Vec3 x1 = f->v[0]->node->x;
+  Vec3 x2 = f->v[1]->node->x;
+  Vec3 x3 = f->v[2]->node->x;
+  Vec3 x4 = n->x0;
+  Vec3 x13 = x1 - x3;
+  Vec3 x23 = x2 - x3;
+  Vec3 normal = normalize(cross(x13, x23));
+  double mass = mesh->mass_matrix.coeff(n->index * 3, n->index * 3);
+  double v_n = norm(dot(n->v, normal) * normal);
+
+  double I = findImpulse(x1, x2, x3, x4, bary_coords, normal, v_n, mass);
+  double I_bar = 2.0d * I / (1 + norm2(bary_coords));
+
+  n->v = n->v - ((I_bar / mass) * normal);
+}
+
+bool Simulation::checkProximity(ClothFace *f1, Face *f2)
 {
   Vec3 bary_coords;
   bool got_proximity = false;
@@ -309,6 +345,8 @@ static bool checkProximity(ClothFace *f1, Face *f2)
     ClothNode *n = static_cast<ClothNode *>(f1->v[i]->node);
     if (checkProximity(n, f2, bary_coords)) {
       got_proximity = true;
+
+      applyRepulsion(n, f2, bary_coords);
     }
   }
   if (got_proximity) {
@@ -338,6 +376,11 @@ void Simulation::solveCollisions()
 {
   for (int i = 0; i < obstacle_meshes.size(); i++) {
     solveCollisions(obstacle_meshes[i]);
+  }
+  const int num_nodes = mesh->nodes.size();
+  for (int i = 0; i < num_nodes; i++) {
+    ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
+    node->x = node->x0 + (h * node->v);
   }
 }
 
