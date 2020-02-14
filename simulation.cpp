@@ -504,6 +504,8 @@ void Simulation::setConstraints()
 {
   clearConstraints();
 
+  applyTransformations();
+
   /* TODO(ish): currently only supports simple springs, need to add
    * bending springs, etc. */
   const int num_edges = mesh->edges.size();
@@ -524,6 +526,8 @@ void Simulation::setConstraints()
       constraints.push_back(c);
     }
   }
+
+  unapplyTransformations();
 }
 
 void Simulation::clearConstraints()
