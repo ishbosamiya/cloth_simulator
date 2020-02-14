@@ -15,8 +15,8 @@ class Primitive {
   {
     shader->use();
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, vec3ToGlmVec3(pos));
     model = glm::scale(model, vec3ToGlmVec3(scale));
+    model = glm::translate(model, vec3ToGlmVec3(pos));
     shader->setMat4("model", model);
   }
 
