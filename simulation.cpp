@@ -399,8 +399,8 @@ void Simulation::applyTransformations()
   }
   else {
     glm::mat4 model = glm::mat4(1.0);
-    model = glm::scale(model, vec3ToGlmVec3(mesh->scale));
     model = glm::translate(model, vec3ToGlmVec3(mesh->pos));
+    model = glm::scale(model, vec3ToGlmVec3(mesh->scale));
     const int num_nodes = mesh->nodes.size();
     for (int i = 0; i < num_nodes; i++) {
       ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
@@ -415,8 +415,8 @@ void Simulation::applyTransformations()
     }
     else {
       glm::mat4 model = glm::mat4(1.0);
-      model = glm::scale(model, vec3ToGlmVec3(ob_mesh->scale));
       model = glm::translate(model, vec3ToGlmVec3(ob_mesh->pos));
+      model = glm::scale(model, vec3ToGlmVec3(ob_mesh->scale));
       const int num_nodes = ob_mesh->nodes.size();
       for (int j = 0; j < num_nodes; j++) {
         ob_mesh->nodes[j]->x = glmVec4ToVec3(model *
@@ -432,8 +432,8 @@ void Simulation::unapplyTransformations()
   }
   else {
     glm::mat4 model_inv = glm::mat4(1.0);
-    model_inv = glm::scale(model_inv, vec3ToGlmVec3(mesh->scale));
     model_inv = glm::translate(model_inv, vec3ToGlmVec3(mesh->pos));
+    model_inv = glm::scale(model_inv, vec3ToGlmVec3(mesh->scale));
     model_inv = glm::inverse(model_inv);
     const int num_nodes = mesh->nodes.size();
     for (int i = 0; i < num_nodes; i++) {
@@ -449,8 +449,8 @@ void Simulation::unapplyTransformations()
     }
     else {
       glm::mat4 model_inv = glm::mat4(1.0);
-      model_inv = glm::scale(model_inv, vec3ToGlmVec3(ob_mesh->scale));
       model_inv = glm::translate(model_inv, vec3ToGlmVec3(ob_mesh->pos));
+      model_inv = glm::scale(model_inv, vec3ToGlmVec3(ob_mesh->scale));
       model_inv = glm::inverse(model_inv);
       const int num_nodes = ob_mesh->nodes.size();
       for (int j = 0; j < num_nodes; j++) {
@@ -679,8 +679,8 @@ void Simulation::drawConstraints(glm::mat4 &projection,
   line_shader.setMat4("projection", projection);
   line_shader.setMat4("view", view);
   glm::mat4 model = glm::mat4(1.0f);
-  model = glm::scale(model, vec3ToGlmVec3(mesh->scale));
   model = glm::translate(model, vec3ToGlmVec3(mesh->pos));
+  model = glm::scale(model, vec3ToGlmVec3(mesh->scale));
   line_shader.setMat4("model", model);
   line_shader.setVec4("color", 0.4, 0.8, 0.5, 1.0);
 
