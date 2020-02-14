@@ -304,19 +304,26 @@ bool Simulation::checkProximity(ClothNode *n, Face *f, Vec3 &r_bary_coords)
   return true;
 }
 
-double Simulation::findImpulse(const Vec3 &x1,
-                               const Vec3 &x2,
-                               const Vec3 &x3,
-                               const Vec3 &x4,
-                               const Vec3 &bary_coords,
-                               const Vec3 &normal,
-                               double v_n,
-                               double mass)
+bool Simulation::findImpulse(const Vec3 &x1,
+                             const Vec3 &x2,
+                             const Vec3 &x3,
+                             const Vec3 &x4,
+                             const Vec3 &bary_coords,
+                             const Vec3 &normal,
+                             double v_n,
+                             double mass,
+                             double &r_impulse)
 {
   double d = cloth_thickness -
              dot((x4 - (bary_coords[0] * x1) - (bary_coords[1] * x2) - (bary_coords[2] * x3)),
                  normal);
-  return -std::min(h * stiffness_stretch * d, mass * ((0.1 * d / h) - v_n));
+
+  if (v_n >= (0.1 * d / h)) {
+    return false;
+  }
+
+  r_impulse = -std::min(h * stiffness_stretch * d, mass * ((0.1 * d / h) - v_n));
+  return true;
 }
 
 void Simulation::applyRepulsion(ClothNode *n, Face *f, const Vec3 &bary_coords)
@@ -329,12 +336,14 @@ void Simulation::applyRepulsion(ClothNode *n, Face *f, const Vec3 &bary_coords)
   Vec3 x23 = x2 - x3;
   Vec3 normal = normalize(cross(x13, x23));
   double mass = mesh->mass_matrix.coeff(n->index * 3, n->index * 3);
-  double v_n = norm(dot(n->v, normal) * normal);
+  double v_n = dot(n->v, normal);
 
-  double I = findImpulse(x1, x2, x3, x4, bary_coords, normal, v_n, mass);
-  double I_bar = 2.0d * I / (1 + norm2(bary_coords));
+  double I;
+  if (findImpulse(x1, x2, x3, x4, bary_coords, normal, v_n, mass, I)) {
+    double I_bar = 2.0d * I / (1 + norm2(bary_coords));
 
-  n->v = n->v - ((I_bar / mass) * normal);
+    n->v = n->v - ((I_bar / mass) * normal);
+  }
 }
 
 bool Simulation::checkProximity(ClothFace *f1, Face *f2)

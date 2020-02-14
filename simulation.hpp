@@ -66,14 +66,15 @@ class Simulation {
   void integrateOptimization();
 
   bool checkProximity(ClothNode *n, Face *f, Vec3 &r_bary_coords);
-  double findImpulse(const Vec3 &x1,
-                     const Vec3 &x2,
-                     const Vec3 &x3,
-                     const Vec3 &x4,
-                     const Vec3 &bary_coords,
-                     const Vec3 &normal,
-                     double v_n,
-                     double mass);
+  bool findImpulse(const Vec3 &x1,
+                   const Vec3 &x2,
+                   const Vec3 &x3,
+                   const Vec3 &x4,
+                   const Vec3 &bary_coords,
+                   const Vec3 &normal,
+                   double v_n,
+                   double mass,
+                   double &r_impulse);
   void applyRepulsion(ClothNode *n, Face *f, const Vec3 &bary_coords);
   bool checkProximity(ClothFace *f1, Face *f2);
   void solveCollisions(Mesh *ob_mesh);
