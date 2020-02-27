@@ -312,21 +312,22 @@ bool Simulation::findImpulse(const Vec3 &x1,
                              const Vec3 &normal,
                              double v_n,
                              double mass,
+                             double dt,
                              double &r_impulse)
 {
   double d = cloth_thickness -
              dot((x4 - (bary_coords[0] * x1) - (bary_coords[1] * x2) - (bary_coords[2] * x3)),
                  normal);
 
-  if (v_n >= (0.1 * d / h)) {
+  if (v_n >= (0.1 * d / dt)) {
     return false;
   }
 
-  r_impulse = -std::min(h * stiffness_stretch * d, mass * ((0.1 * d / h) - v_n));
+  r_impulse = -std::min(dt * stiffness_stretch * d, mass * ((0.1 * d / dt) - v_n));
   return true;
 }
 
-void Simulation::applyRepulsion(ClothNode *n, Face *f, const Vec3 &bary_coords)
+void Simulation::applyRepulsion(ClothNode *n, Face *f, const Vec3 &bary_coords, double dt)
 {
   Vec3 x1 = f->v[0]->node->x;
   Vec3 x2 = f->v[1]->node->x;
@@ -339,14 +340,16 @@ void Simulation::applyRepulsion(ClothNode *n, Face *f, const Vec3 &bary_coords)
   double v_n = dot(n->v, normal);
 
   double I;
-  if (findImpulse(x1, x2, x3, x4, bary_coords, normal, v_n, mass, I)) {
+  if (findImpulse(x1, x2, x3, x4, bary_coords, normal, v_n, mass, dt, I)) {
     double I_bar = 2.0d * I / (1 + norm2(bary_coords));
 
-    n->v = n->v - ((I_bar / mass) * normal);
+    n->I += I_bar;
+    n->impulse_count++;
+    n->impulse_normal += normal;
   }
 }
 
-bool Simulation::checkProximity(ClothFace *f1, Face *f2)
+bool Simulation::checkProximity(ClothFace *f1, Face *f2, double dt)
 {
   Vec3 bary_coords;
   bool got_proximity = false;
@@ -355,7 +358,7 @@ bool Simulation::checkProximity(ClothFace *f1, Face *f2)
     if (checkProximity(n, f2, bary_coords)) {
       got_proximity = true;
 
-      applyRepulsion(n, f2, bary_coords);
+      applyRepulsion(n, f2, bary_coords, dt);
     }
   }
   if (got_proximity) {
@@ -367,15 +370,40 @@ bool Simulation::checkProximity(ClothFace *f1, Face *f2)
 void Simulation::solveCollisions(Mesh *ob_mesh)
 {
   int count = 0;
-  for (int i = 0; i < mesh->faces.size(); i++) {
-    ClothFace *fm = static_cast<ClothFace *>(mesh->faces[i]);
-    for (int j = 0; j < ob_mesh->faces.size(); j++) {
-      Face *fo = ob_mesh->faces[j];
-      if (checkProximity(fm, fo)) {
-        count++;
+  const int num_nodes = mesh->nodes.size();
+
+  int collision_quality = 20;
+  double time_step = h / (double)collision_quality;
+  for (double dt = time_step; dt <= h; dt += time_step) {
+    for (int i = 0; i < num_nodes; i++) {
+      ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
+      node->I = 0.0d;
+      node->impulse_count = 0;
+      node->impulse_normal = Vec3(0.0d);
+    }
+    for (int i = 0; i < mesh->faces.size(); i++) {
+      ClothFace *fm = static_cast<ClothFace *>(mesh->faces[i]);
+      for (int j = 0; j < ob_mesh->faces.size(); j++) {
+        Face *fo = ob_mesh->faces[j];
+        if (checkProximity(fm, fo, dt)) {
+          count++;
+        }
       }
     }
+    for (int i = 0; i < num_nodes; i++) {
+      ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
+      if (node->impulse_count == 0) {
+        continue;
+      }
+      double mass = mesh->mass_matrix.coeff(node->index * 3, node->index * 3);
+      cout << "node->impulse_count: " << node->impulse_count << " node->I: " << node->I
+           << " node->impulse_normal: " << node->impulse_normal << " dt: " << dt << endl;
+      node->I /= (double)node->impulse_count;
+      node->v = node->v - ((node->I / mass) * node->impulse_normal);
+      node->x0 = node->x0 + (dt * node->v);
+    }
   }
+
   cout << "count: " << count << " ob_mesh->faces.size(): " << ob_mesh->faces.size()
        << " mesh->faces.size(): " << mesh->faces.size()
        << " mesh->nodes.size(): " << mesh->nodes.size() << endl;
