@@ -115,7 +115,7 @@ class Face : public Primitive {
   bool boundingBox(AABB &r_box)
   {
     Vec3 min_v(FLT_MAX);
-    Vec3 max_v(FLT_MIN);
+    Vec3 max_v(-FLT_MAX);
 
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
@@ -229,7 +229,7 @@ class Mesh : public Primitive {
   virtual bool boundingBox(AABB &r_box)
   {
     Vec3 min_v(FLT_MAX);
-    Vec3 max_v(FLT_MIN);
+    Vec3 max_v(-FLT_MAX);
 
     const int num_nodes = nodes.size();
 
