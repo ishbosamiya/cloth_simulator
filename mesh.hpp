@@ -7,11 +7,14 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <limits>
 
 #include "math.hpp"
 #include "misc.hpp"
 #include "opengl_mesh.hpp"
 #include "primitives.hpp"
+#include "aabb.hpp"
+#include "bvh.hpp"
 
 using namespace std;
 
@@ -87,7 +90,7 @@ class Edge {
 
 /* Stores the Face data */
 /* Only triangles */
-class Face {
+class Face : public Primitive {
  public:
   Vert *v[3];     /* reference to verts of the face */
   Edge *adj_e[3]; /* reference to adjacent edges of the face */
@@ -108,6 +111,27 @@ class Face {
     v[1] = v1;
     v[2] = v2;
   }
+
+  bool boundingBox(AABB &r_box)
+  {
+    Vec3 min_v(FLT_MAX);
+    Vec3 max_v(FLT_MIN);
+
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        if (v[i]->node->x[j] < min_v[j]) {
+          min_v[j] = v[i]->node->x[j];
+        }
+        if (v[i]->node->x[j] > max_v[j]) {
+          max_v[j] = v[i]->node->x[j];
+        }
+      }
+    }
+
+    r_box = AABB(min_v, max_v);
+
+    return true;
+  }
 };
 
 /* Stores the overall Mesh data */
@@ -117,59 +141,61 @@ class Mesh : public Primitive {
   GLMesh convertToGLMesh();
   void deleteMesh();
 
+  BVHNode *bvh; /* The BVH for the mesh */
+
  public:
   Mesh()
   {
   }
 
-  Mesh(const string &filename)
+  Mesh(const string &filename) : bvh(NULL)
   {
     Mesh::loadObj(filename);
   }
 
-  Mesh(const string &filename, Shader *shader) : Primitive(shader)
+  Mesh(const string &filename, Shader *shader) : Primitive(shader), bvh(NULL)
   {
     Mesh::loadObj(filename);
   }
 
-  Mesh(const string &filename, Vec3 pos) : Primitive(pos)
+  Mesh(const string &filename, Vec3 pos) : Primitive(pos), bvh(NULL)
   {
     Mesh::loadObj(filename);
   }
 
-  Mesh(const string &filename, Vec3 pos, Shader *shader) : Primitive(pos, shader)
+  Mesh(const string &filename, Vec3 pos, Shader *shader) : Primitive(pos, shader), bvh(NULL)
   {
     Mesh::loadObj(filename);
   }
 
-  Mesh(const string &filename, Vec3 pos, Vec3 scale) : Primitive(pos, scale)
+  Mesh(const string &filename, Vec3 pos, Vec3 scale) : Primitive(pos, scale), bvh(NULL)
   {
     Mesh::loadObj(filename);
   }
 
   Mesh(const string &filename, Vec3 pos, Vec3 scale, Shader *shader)
-      : Primitive(pos, scale, shader)
+      : Primitive(pos, scale, shader), bvh(NULL)
   {
     Mesh::loadObj(filename);
   }
 
-  Mesh(Shader *shader) : Primitive(shader)
+  Mesh(Shader *shader) : Primitive(shader), bvh(NULL)
   {
   }
 
-  Mesh(Vec3 pos) : Primitive(pos)
+  Mesh(Vec3 pos) : Primitive(pos), bvh(NULL)
   {
   }
 
-  Mesh(Vec3 pos, Shader *shader) : Primitive(pos, shader)
+  Mesh(Vec3 pos, Shader *shader) : Primitive(pos, shader), bvh(NULL)
   {
   }
 
-  Mesh(Vec3 pos, Vec3 scale) : Primitive(pos, scale)
+  Mesh(Vec3 pos, Vec3 scale) : Primitive(pos, scale), bvh(NULL)
   {
   }
 
-  Mesh(Vec3 pos, Vec3 scale, Shader *shader) : Primitive(pos, scale, shader)
+  Mesh(Vec3 pos, Vec3 scale, Shader *shader) : Primitive(pos, scale, shader), bvh(NULL)
   {
   }
 
@@ -198,6 +224,41 @@ class Mesh : public Primitive {
   virtual bool intersectionTest(const Vec3 &p, Vec3 &r_normal, double &r_distance)
   {
     return false;
+  }
+
+  virtual bool boundingBox(AABB &r_box)
+  {
+    Vec3 min_v(FLT_MAX);
+    Vec3 max_v(FLT_MIN);
+
+    const int num_nodes = nodes.size();
+
+    /* TODO(ish): add support for pos and scale, as of right now, it
+     * is assumed that a function prior has applied the
+     * transformaiton and a function later will unapply the transformation */
+    for (int i = 0; i < num_nodes; i++) {
+      for (int j = 0; j < 3; j++) {
+        if (nodes[i]->x[j] < min_v[j]) {
+          min_v[j] = nodes[i]->x[j];
+        }
+        if (nodes[i]->x[j] > max_v[j]) {
+          max_v[j] = nodes[i]->x[j];
+        }
+      }
+    }
+
+    r_box = AABB(min_v, max_v);
+
+    return true;
+  }
+
+  void buildBVH();
+  void deleteBVH();
+  void drawBVH(glm::mat4 &projection, glm::mat4 &view)
+  {
+    if (bvh) {
+      bvh->draw(projection, view);
+    }
   }
 
   ~Mesh()

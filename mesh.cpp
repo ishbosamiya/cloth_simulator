@@ -326,6 +326,18 @@ void Mesh::draw()
   gl_mesh.draw();
 }
 
+void Mesh::buildBVH()
+{
+  assert(bvh == NULL);
+  bvh = new BVHNode((Primitive **)&faces[0], faces.size());
+}
+
+void Mesh::deleteBVH()
+{
+  delete bvh;
+  bvh = NULL;
+}
+
 void Mesh::deleteMesh()
 {
   for (int i = 0; i < verts.size(); i++) {

@@ -170,6 +170,10 @@ int main()
     simulation.drawConstraints(
         projection, view, draw_constraints_stretch, draw_constraints_bending);
 
+    mesh.buildBVH();
+    mesh.drawBVH(projection, view);
+    mesh.deleteBVH();
+
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(window);
     glfwPollEvents();

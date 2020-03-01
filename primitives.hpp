@@ -6,9 +6,12 @@
 #include "opengl_mesh.hpp"
 #include "math.hpp"
 #include "shader.hpp"
+#include "aabb.hpp"
 
 using namespace std;
 
+/* TODO(ish): figure out how to remove excessive pos and scale values,
+ * needed because face is also a primitive due to the BVH */
 class Primitive {
  protected:
   inline void setShaderModelMatrix()
@@ -81,6 +84,11 @@ class Primitive {
   {
     cout << "warning: reached <Primitive> base class virtual function: " << __func__ << endl;
   }
+
+  virtual bool boundingBox(AABB &r_box)
+  {
+    cout << "warning: reached <Primitive> base class virtual function: " << __func__ << endl;
+  }
 };
 
 class Sphere : public Primitive {
@@ -123,6 +131,12 @@ class Sphere : public Primitive {
   {
     setShaderModelMatrix();
     mesh->draw();
+  }
+
+  bool boundingBox(AABB &r_box)
+  {
+    r_box = AABB(pos - Vec3(radius), pos + Vec3(radius));
+    return true;
   }
 };
 
