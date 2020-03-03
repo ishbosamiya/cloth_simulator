@@ -423,69 +423,21 @@ void Simulation::solveCollisions()
 
 void Simulation::applyTransformations()
 {
-  if (mesh->pos == Vec3(0, 0, 0) && mesh->scale == Vec3(1, 1, 1)) {
-  }
-  else {
-    glm::mat4 model = glm::mat4(1.0);
-    model = glm::translate(model, vec3ToGlmVec3(mesh->pos));
-    model = glm::scale(model, vec3ToGlmVec3(mesh->scale));
-    const int num_nodes = mesh->nodes.size();
-    for (int i = 0; i < num_nodes; i++) {
-      ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
-      node->x = glmVec4ToVec3(model * glm::vec4(vec3ToGlmVec3(node->x), 1.0));
-      node->x0 = glmVec4ToVec3(model * glm::vec4(vec3ToGlmVec3(node->x0), 1.0));
-    }
-  }
+  mesh->applyTransformation();
 
   for (int i = 0; i < obstacle_meshes.size(); i++) {
     Mesh *ob_mesh = obstacle_meshes[i];
-    if (ob_mesh->pos == Vec3(0, 0, 0) && ob_mesh->scale == Vec3(1, 1, 1)) {
-    }
-    else {
-      glm::mat4 model = glm::mat4(1.0);
-      model = glm::translate(model, vec3ToGlmVec3(ob_mesh->pos));
-      model = glm::scale(model, vec3ToGlmVec3(ob_mesh->scale));
-      const int num_nodes = ob_mesh->nodes.size();
-      for (int j = 0; j < num_nodes; j++) {
-        ob_mesh->nodes[j]->x = glmVec4ToVec3(model *
-                                             glm::vec4(vec3ToGlmVec3(ob_mesh->nodes[j]->x), 1.0));
-      }
-    }
+    ob_mesh->applyTransformation();
   }
 }
 
 void Simulation::unapplyTransformations()
 {
-  if (mesh->pos == Vec3(0, 0, 0) && mesh->scale == Vec3(1, 1, 1)) {
-  }
-  else {
-    glm::mat4 model_inv = glm::mat4(1.0);
-    model_inv = glm::translate(model_inv, vec3ToGlmVec3(mesh->pos));
-    model_inv = glm::scale(model_inv, vec3ToGlmVec3(mesh->scale));
-    model_inv = glm::inverse(model_inv);
-    const int num_nodes = mesh->nodes.size();
-    for (int i = 0; i < num_nodes; i++) {
-      ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
-      node->x = glmVec4ToVec3(model_inv * glm::vec4(vec3ToGlmVec3(node->x), 1.0));
-      node->x0 = glmVec4ToVec3(model_inv * glm::vec4(vec3ToGlmVec3(node->x0), 1.0));
-    }
-  }
+  mesh->unapplyTransformation();
 
   for (int i = 0; i < obstacle_meshes.size(); i++) {
     Mesh *ob_mesh = obstacle_meshes[i];
-    if (ob_mesh->pos == Vec3(0, 0, 0) && ob_mesh->scale == Vec3(1, 1, 1)) {
-    }
-    else {
-      glm::mat4 model_inv = glm::mat4(1.0);
-      model_inv = glm::translate(model_inv, vec3ToGlmVec3(ob_mesh->pos));
-      model_inv = glm::scale(model_inv, vec3ToGlmVec3(ob_mesh->scale));
-      model_inv = glm::inverse(model_inv);
-      const int num_nodes = ob_mesh->nodes.size();
-      for (int j = 0; j < num_nodes; j++) {
-        ob_mesh->nodes[j]->x = glmVec4ToVec3(model_inv *
-                                             glm::vec4(vec3ToGlmVec3(ob_mesh->nodes[j]->x), 1.0));
-      }
-    }
+    ob_mesh->unapplyTransformation();
   }
 }
 

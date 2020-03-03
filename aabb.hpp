@@ -47,6 +47,13 @@ class AABB {
     return 2.0 * (a * b + b * c + c * a);
   }
 
+  bool overlap(const AABB &box) const
+  {
+    return (min_v[0] <= box.max_v[0] && max_v[0] >= box.min_v[0]) &&
+           (min_v[1] <= box.max_v[1] && max_v[1] >= box.min_v[1]) &&
+           (min_v[2] <= box.max_v[2] && max_v[2] >= box.min_v[2]);
+  }
+
   void getLines(vector<glm::vec3> &r_pos_box, vector<unsigned int> &r_indices_box)
   {
     double x0 = min_v[0];

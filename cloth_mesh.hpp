@@ -142,6 +142,9 @@ class ClothMesh : public Mesh {
 
   void loadObj(const string &file);
 
+  void applyTransformation();
+  void unapplyTransformation();
+
   ~ClothMesh()
   {
   }

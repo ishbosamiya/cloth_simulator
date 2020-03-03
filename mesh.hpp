@@ -141,8 +141,6 @@ class Mesh : public Primitive {
   GLMesh convertToGLMesh();
   void deleteMesh();
 
-  BVHNode *bvh; /* The BVH for the mesh */
-
  public:
   Mesh()
   {
@@ -203,6 +201,7 @@ class Mesh : public Primitive {
   vector<Node *> nodes;
   vector<Edge *> edges;
   vector<Face *> faces;
+  BVHNode *bvh; /* The BVH for the mesh */
 
   virtual void add(Vert *vert);
   virtual void add(Node *node);
@@ -225,6 +224,9 @@ class Mesh : public Primitive {
   {
     return false;
   }
+
+  virtual void applyTransformation();
+  virtual void unapplyTransformation();
 
   virtual bool boundingBox(AABB &r_box)
   {
