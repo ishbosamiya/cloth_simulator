@@ -86,6 +86,36 @@ class ClothFace : public Face {
   ClothFace(ClothVert *v0, ClothVert *v1, ClothVert *v2) : Face(v0, v1, v2)
   {
   }
+
+  bool boundingBox(AABB &r_box)
+  {
+    Vec3 min_v_x(FLT_MAX);
+    Vec3 max_v_x(-FLT_MAX);
+    Vec3 min_v_x0(FLT_MAX);
+    Vec3 max_v_x0(-FLT_MAX);
+
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        ClothNode *node = static_cast<ClothNode *>(v[i]->node);
+        if (node->x[j] < min_v_x[j]) {
+          min_v_x[j] = node->x[j];
+        }
+        if (node->x[j] > max_v_x[j]) {
+          max_v_x[j] = node->x[j];
+        }
+        if (node->x0[j] < min_v_x0[j]) {
+          min_v_x0[j] = node->x0[j];
+        }
+        if (node->x0[j] > max_v_x0[j]) {
+          max_v_x0[j] = node->x0[j];
+        }
+      }
+    }
+
+    r_box = surroundingBox(AABB(min_v_x, max_v_x), AABB(min_v_x0, max_v_x0));
+
+    return true;
+  }
 };
 
 /* Stores the overall ClothMesh data */
