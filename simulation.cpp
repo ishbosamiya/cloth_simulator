@@ -367,6 +367,27 @@ bool Simulation::checkProximity(ClothFace *f1, Face *f2, double dt)
   return false;
 }
 
+/* r_result is not used here */
+bool Simulation::test(Primitive *pf1, Primitive *pf2, const double dt, vector<bool> &r_result)
+{
+  ClothFace *f1 = static_cast<ClothFace *>(pf1);
+  Face *f2 = static_cast<Face *>(pf2);
+  Vec3 bary_coords;
+  bool got_proximity = false;
+  for (int i = 0; i < 3; i++) {
+    ClothNode *n = static_cast<ClothNode *>(f1->v[i]->node);
+    if (checkProximity(n, f2, bary_coords)) {
+      got_proximity = true;
+
+      applyRepulsion(n, f2, bary_coords, dt);
+    }
+  }
+  if (got_proximity) {
+    return true;
+  }
+  return false;
+}
+
 void Simulation::solveCollisions(Mesh *ob_mesh)
 {
   int count = 0;
@@ -374,6 +395,8 @@ void Simulation::solveCollisions(Mesh *ob_mesh)
 
   int collision_quality = 20;
   double time_step = h / (double)collision_quality;
+  mesh->buildBVH();
+  ob_mesh->buildBVH();
   for (double dt = time_step; dt <= h; dt += time_step) {
     for (int i = 0; i < num_nodes; i++) {
       ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
@@ -381,15 +404,47 @@ void Simulation::solveCollisions(Mesh *ob_mesh)
       node->impulse_count = 0;
       node->impulse_normal = Vec3(0.0d);
     }
-    for (int i = 0; i < mesh->faces.size(); i++) {
-      ClothFace *fm = static_cast<ClothFace *>(mesh->faces[i]);
-      for (int j = 0; j < ob_mesh->faces.size(); j++) {
-        Face *fo = ob_mesh->faces[j];
-        if (checkProximity(fm, fo, dt)) {
-          count++;
-        }
+    /* for (int i = 0; i < mesh->faces.size(); i++) { */
+    /*   ClothFace *fm = static_cast<ClothFace *>(mesh->faces[i]); */
+    /*   for (int j = 0; j < ob_mesh->faces.size(); j++) { */
+    /*     Face *fo = ob_mesh->faces[j]; */
+    /*     if (checkProximity(fm, fo, dt)) { */
+    /*       count++; */
+    /*     } */
+    /*   } */
+    /* } */
+    vector<glm::vec3> pos_box;
+    vector<unsigned int> indices_box;
+    vector<BVHTreeOverlapResult> overlap_result;
+    int user_data_useless;
+    mesh->bvh->overlap(
+        ob_mesh->bvh, pos_box, indices_box, NULL, &user_data_useless, overlap_result);
+    unsigned int overlap_size = overlap_result.size();
+
+    /* for (int i = 0; i < overlap_size; i++) { */
+    /*   cout << "overlap: " << overlap_result[i].indexA << " " << overlap_result[i].indexB <<
+     * endl; */
+    /* } */
+    /* if (overlap_size) { */
+    /*   cout << endl; */
+    /* } */
+    for (int i = 0; i < overlap_size; i++) {
+      ClothFace *f1 = static_cast<ClothFace *>(mesh->faces[overlap_result[i].indexA]);
+      Face *f2 = ob_mesh->faces[overlap_result[i].indexB];
+      if (checkProximity(f1, f2, dt)) {
+        count++;
       }
     }
+    /* static Shader line_shader("shaders/line.vert", "shaders/line.frag"); */
+    /* line_shader.use(); */
+    /* line_shader.setMat4("projection", projection); */
+    /* line_shader.setMat4("view", view); */
+    /* glm::mat4 model = glm::mat4(1.0f); */
+    /* line_shader.setMat4("model", model); */
+    /* line_shader.setVec4("color", 0.2, 0.4, 0.8, 1.0); */
+    /* GLLine line_box(pos_box, indices_box); */
+    /* line_box.draw(); */
+    /* mesh->drawBVH(projection, view); */
     for (int i = 0; i < num_nodes; i++) {
       ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
       if (node->impulse_count == 0) {
@@ -403,6 +458,8 @@ void Simulation::solveCollisions(Mesh *ob_mesh)
       node->x0 = node->x0 + (dt * node->v);
     }
   }
+  ob_mesh->deleteBVH();
+  mesh->deleteBVH();
 
   cout << "count: " << count << " ob_mesh->faces.size(): " << ob_mesh->faces.size()
        << " mesh->faces.size(): " << mesh->faces.size()

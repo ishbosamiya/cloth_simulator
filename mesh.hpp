@@ -92,12 +92,12 @@ class Edge {
 /* Only triangles */
 class Face : public Primitive {
  public:
-  Vert *v[3];     /* reference to verts of the face */
-  Edge *adj_e[3]; /* reference to adjacent edges of the face */
-  int index;      /* position in Mesh.faces */
-  Vec3 n;         /* normal */
+  Vert *v[3];              /* reference to verts of the face */
+  Edge *adj_e[3];          /* reference to adjacent edges of the face */
+  /* unsigned int index */ /* position in Mesh.faces, is in Primitive */
+  Vec3 n;                  /* normal */
 
-  Face() : index(-1)
+  Face()
   {
     for (int i = 0; i < 3; i++) {
       v[i] = NULL;

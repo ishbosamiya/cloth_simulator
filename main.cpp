@@ -170,26 +170,6 @@ int main()
     simulation.drawConstraints(
         projection, view, draw_constraints_stretch, draw_constraints_bending);
 
-    mesh.buildBVH();
-    ob_mesh.applyTransformation();
-    ob_mesh.buildBVH();
-    ob_mesh.unapplyTransformation();
-    vector<glm::vec3> pos_box;
-    vector<unsigned int> indices_box;
-    mesh.bvh->overlap(ob_mesh.bvh, pos_box, indices_box);
-    static Shader line_shader("shaders/line.vert", "shaders/line.frag");
-    line_shader.use();
-    line_shader.setMat4("projection", projection);
-    line_shader.setMat4("view", view);
-    glm::mat4 model = glm::mat4(1.0f);
-    line_shader.setMat4("model", model);
-    line_shader.setVec4("color", 0.2, 0.4, 0.8, 1.0);
-    GLLine line_box(pos_box, indices_box);
-    line_box.draw();
-    /* mesh.drawBVH(projection, view); */
-    ob_mesh.deleteBVH();
-    mesh.deleteBVH();
-
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(window);
     glfwPollEvents();

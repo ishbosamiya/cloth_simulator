@@ -78,6 +78,7 @@ class Simulation {
                    double &r_impulse);
   void applyRepulsion(ClothNode *n, Face *f, const Vec3 &bary_coords, double dt);
   bool checkProximity(ClothFace *f1, Face *f2, double dt);
+  bool test(Primitive *pf1, Primitive *pf2, const double dt, vector<bool> &r_result);
   void solveCollisions(Mesh *ob_mesh);
   void solveCollisions();
 

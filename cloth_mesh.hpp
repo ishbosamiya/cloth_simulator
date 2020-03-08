@@ -81,36 +81,37 @@ class ClothFace : public Face {
 
   ClothFace() : Face(), area(0.0f), mass(0.0f)
   {
+    type = PRIMITIVE_FACE;
   }
 
   ClothFace(ClothVert *v0, ClothVert *v1, ClothVert *v2) : Face(v0, v1, v2)
   {
+    type = PRIMITIVE_FACE;
   }
 
   bool boundingBox(AABB &r_box)
   {
-    Vec3 min_v_x(FLT_MAX);
-    Vec3 max_v_x(-FLT_MAX);
-    Vec3 min_v_x0(FLT_MAX);
-    Vec3 max_v_x0(-FLT_MAX);
+    Vec3 min_v_x;
+    Vec3 max_v_x;
+    Vec3 min_v_x0;
+    Vec3 max_v_x0;
 
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        ClothNode *node = static_cast<ClothNode *>(v[i]->node);
-        if (node->x[j] < min_v_x[j]) {
-          min_v_x[j] = node->x[j];
-        }
-        if (node->x[j] > max_v_x[j]) {
-          max_v_x[j] = node->x[j];
-        }
-        if (node->x0[j] < min_v_x0[j]) {
-          min_v_x0[j] = node->x0[j];
-        }
-        if (node->x0[j] > max_v_x0[j]) {
-          max_v_x0[j] = node->x0[j];
-        }
-      }
-    }
+    ClothNode *node1 = static_cast<ClothNode *>(v[0]->node);
+    ClothNode *node2 = static_cast<ClothNode *>(v[1]->node);
+    ClothNode *node3 = static_cast<ClothNode *>(v[2]->node);
+    min_v_x[0] = min(node1->x[0], node2->x[0], node3->x[0]);
+    min_v_x0[0] = min(node1->x0[0], node2->x0[0], node3->x0[0]);
+    min_v_x[1] = min(node1->x[1], node2->x[1], node3->x[1]);
+    min_v_x0[1] = min(node1->x0[1], node2->x0[1], node3->x0[1]);
+    min_v_x[2] = min(node1->x[2], node2->x[2], node3->x[2]);
+    min_v_x0[2] = min(node1->x0[2], node2->x0[2], node3->x0[2]);
+
+    max_v_x[0] = max(node1->x[0], node2->x[0], node3->x[0]);
+    max_v_x0[0] = max(node1->x0[0], node2->x0[0], node3->x0[0]);
+    max_v_x[1] = max(node1->x[1], node2->x[1], node3->x[1]);
+    max_v_x0[1] = max(node1->x0[1], node2->x0[1], node3->x0[1]);
+    max_v_x[2] = max(node1->x[2], node2->x[2], node3->x[2]);
+    max_v_x0[2] = max(node1->x0[2], node2->x0[2], node3->x0[2]);
 
     r_box = surroundingBox(AABB(min_v_x, max_v_x), AABB(min_v_x0, max_v_x0));
 
