@@ -178,8 +178,10 @@ int main()
         projection, view, draw_constraints_stretch, draw_constraints_bending);
 
     char fps_text[25];
-    snprintf(fps_text, 25, "fps: %.2f avg_fps: %.2f", fps, avg_fps);
+    snprintf(fps_text, 25, "fps: %.2f", fps);
     text.renderText(text_shader, fps_text, "ubuntu", 7.0, SCR_HEIGHT - 20, 0.3);
+    snprintf(fps_text, 25, "avg_fps: %.2f", avg_fps);
+    text.renderText(text_shader, fps_text, "ubuntu", 7.0, SCR_HEIGHT - 40, 0.3);
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(window);
