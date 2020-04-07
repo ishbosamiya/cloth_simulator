@@ -1,5 +1,5 @@
 CC = g++
-INCLUDES = -I/usr/include/eigen3/
+INCLUDES = -I/usr/include/eigen3/ -I/usr/include/freetype2 -I/usr/include/libpng16
 
 ifeq (${mode}, release)
 	FLAGS = -O3 -march=native
@@ -10,6 +10,7 @@ else
 endif
 
 GL_FLAGS = -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl
+LIB_FLAGS = -lfreetype
 OBJS = glad.o main.o cloth_mesh.o constraint.o simulation.o mesh.o primitives.o bvh.o aabb.o
 PROJECT_NAME = cloth_simulator
 
@@ -22,27 +23,27 @@ endif
 ${PROJECT}: ${OBJS} clean_emacs_files
 	@echo "Building on "${mode}" mode"
 	@echo ".........................."
-	${CC} ${INCLUDES} ${FLAGS} ${OBJS} -o $@ ${GL_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} ${OBJS} -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 	-make clean
 
 glad.o:
 	${CC} -c glad.c -o $@ ${GL_FLAGS}
 main.o:
-	${CC} ${INCLUDES} ${FLAGS} -c main.cpp -o $@ ${GL_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} -c main.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 cloth_mesh.o:
-	${CC} ${INCLUDES} ${FLAGS} -c cloth_mesh.cpp -o $@ ${GL_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} -c cloth_mesh.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 constraint.o:
-	${CC} ${INCLUDES} ${FLAGS} -c constraint.cpp -o $@ ${GL_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} -c constraint.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 simulation.o:
-	${CC} ${INCLUDES} ${FLAGS} -c simulation.cpp -o $@ ${GL_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} -c simulation.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 mesh.o:
-	${CC} ${INCLUDES} ${FLAGS} -c mesh.cpp -o $@ ${GL_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} -c mesh.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 primitives.o:
-	${CC} ${INCLUDES} ${FLAGS} -c primitives.cpp -o $@ ${GL_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} -c primitives.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 bvh.o:
-	${CC} ${INCLUDES} ${FLAGS} -c bvh.cpp -o $@ ${GL_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} -c bvh.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 aabb.o:
-	${CC} ${INCLUDES} ${FLAGS} -c aabb.cpp -o $@ ${GL_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} -c aabb.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 
 .PHONEY: clean clean_emacs_files clean_all
 clean:

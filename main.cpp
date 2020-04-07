@@ -11,6 +11,7 @@
 #include "camera.hpp"
 #include "opengl_mesh.hpp"
 #include "simulation.hpp"
+#include "text.hpp"
 
 using namespace std;
 
@@ -78,6 +79,10 @@ int main()
   }
 
   glEnable(GL_DEPTH_TEST);
+  /* This is mainly for the text, might be causing a slow down for the
+   * rest of it */
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   glm::vec3 light_dir(-0.7f, -1.0f, -0.7f);
   // build and compile our shader program
@@ -90,6 +95,16 @@ int main()
   /* Sphere ob_mesh(0.3, Vec3(0, -0.5, 0), &directional_light_shader); */
   Mesh ob_mesh("obstacle.obj", Vec3(0, -1.2, 0), Vec3(1), &directional_light_shader);
   simulation.addObstacleMesh(&ob_mesh);
+
+  /* Text initialization */
+  Text text;
+  text.loadFont("/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf", "ubuntu", 0, 48);
+  Shader text_shader("shaders/text_shader.vert", "shaders/text_shader.frag");
+  text_shader.use();
+  text_shader.setVec3("textColor", 1.0, 1.0, 1.0);
+  text_shader.setMat4(
+      "projection",
+      glm::ortho(0.0f, static_cast<GLfloat>(SCR_WIDTH), 0.0f, static_cast<GLfloat>(SCR_HEIGHT)));
 
   // render loop
   unsigned int frame_count = 0;
@@ -104,17 +119,9 @@ int main()
 
     float fps = 1.0f / delta_time;
     float avg_fps = frame_count / (current_frame - initial_time);
-    if (frame_count > 120) {
+    if (frame_count > 240) {
       frame_count = 0;
       initial_time = glfwGetTime();
-    }
-    if (avg_fps > 56) {
-      if (frame_count % 120 == 0) {
-        printf("fps: %.2f avg_fps: %.2f\n", fps, avg_fps);
-      }
-    }
-    else {
-      printf("fps: %.2f avg_fps: %.2f\n", fps, avg_fps);
     }
 
     // input
@@ -169,6 +176,10 @@ int main()
 
     simulation.drawConstraints(
         projection, view, draw_constraints_stretch, draw_constraints_bending);
+
+    char fps_text[25];
+    snprintf(fps_text, 25, "fps: %.2f avg_fps: %.2f", fps, avg_fps);
+    text.renderText(text_shader, fps_text, "ubuntu", 7.0, SCR_HEIGHT - 20, 0.3);
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(window);
