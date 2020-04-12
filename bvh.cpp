@@ -633,3 +633,294 @@ void BVHTree_update_tree(BVHTree *tree)
     node_join(tree, *index);
   }
 }
+
+int BVHTree_overlap_thread_num(const BVHTree *tree)
+{
+  return min(tree->tree_type, tree->nodes[tree->totleaf]->totnode);
+}
+
+/**
+ * overlap - is it possible for 2 bv's to collide ?
+ */
+static bool tree_overlap_test(const BVHNode *node1,
+                              const BVHNode *node2,
+                              axis_t start_axis,
+                              axis_t stop_axis)
+{
+  const float *bv1 = node1->bv + (start_axis << 1);
+  const float *bv2 = node2->bv + (start_axis << 1);
+  const float *bv1_end = node1->bv + (stop_axis << 1);
+
+  /* test all axis if min + max overlap */
+  for (; bv1 != bv1_end; bv1 += 2, bv2 += 2) {
+    if ((bv1[0] > bv2[1]) || (bv2[0] > bv1[1])) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+static inline axis_t min_axis(axis_t a, axis_t b)
+{
+  return (a < b) ? a : b;
+}
+
+/**
+ * a version of #tree_overlap_traverse_cb that that break on first true return.
+ */
+static bool tree_overlap_traverse_num(BVHOverlapData_Thread *data_thread,
+                                      const BVHNode *node1,
+                                      const BVHNode *node2)
+{
+  BVHOverlapData_Shared *data = data_thread->shared;
+  int j;
+
+  if (tree_overlap_test(node1, node2, data->start_axis, data->stop_axis)) {
+    /* check if node1 is a leaf */
+    if (!node1->totnode) {
+      /* check if node2 is a leaf */
+      if (!node2->totnode) {
+        BVHTreeOverlap overlap;
+
+        if (node1 == node2) {
+          return false;
+        }
+
+        /* only difference to tree_overlap_traverse! */
+        if (!data->callback ||
+            data->callback(data->userdata, node1->index, node2->index, data_thread->thread)) {
+          /* both leafs, insert overlap! */
+          if (data_thread->overlap) {
+            overlap.indexA = node1->index;
+            overlap.indexB = node2->index;
+            data_thread->overlap->push(overlap);
+          }
+          return (--data_thread->max_interactions) == 0;
+        }
+      }
+      else {
+        for (j = 0; j < node2->totnode; j++) {
+          if (tree_overlap_traverse_num(data_thread, node1, node2->children[j])) {
+            return true;
+          }
+        }
+      }
+    }
+    else {
+      const uint max_interactions = data_thread->max_interactions;
+      for (j = 0; j < node1->totnode; j++) {
+        if (tree_overlap_traverse_num(data_thread, node1->children[j], node2)) {
+          data_thread->max_interactions = max_interactions;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * a version of #tree_overlap_traverse that runs a callback to check if the nodes really intersect.
+ */
+static void tree_overlap_traverse_cb(BVHOverlapData_Thread *data_thread,
+                                     const BVHNode *node1,
+                                     const BVHNode *node2)
+{
+  BVHOverlapData_Shared *data = data_thread->shared;
+  int j;
+
+  if (tree_overlap_test(node1, node2, data->start_axis, data->stop_axis)) {
+    /* check if node1 is a leaf */
+    if (!node1->totnode) {
+      /* check if node2 is a leaf */
+      if (!node2->totnode) {
+        BVHTreeOverlap overlap;
+
+        if (node1 == node2) {
+          return;
+        }
+
+        /* only difference to tree_overlap_traverse! */
+        if (data->callback(data->userdata, node1->index, node2->index, data_thread->thread)) {
+          /* both leafs, insert overlap! */
+          overlap.indexA = node1->index;
+          overlap.indexB = node2->index;
+          data_thread->overlap->push(overlap);
+        }
+      }
+      else {
+        for (j = 0; j < data->tree2->tree_type; j++) {
+          if (node2->children[j]) {
+            tree_overlap_traverse_cb(data_thread, node1, node2->children[j]);
+          }
+        }
+      }
+    }
+    else {
+      for (j = 0; j < data->tree1->tree_type; j++) {
+        if (node1->children[j]) {
+          tree_overlap_traverse_cb(data_thread, node1->children[j], node2);
+        }
+      }
+    }
+  }
+}
+
+static void tree_overlap_traverse(BVHOverlapData_Thread *data_thread,
+                                  const BVHNode *node1,
+                                  const BVHNode *node2)
+{
+  BVHOverlapData_Shared *data = data_thread->shared;
+  int j;
+
+  if (tree_overlap_test(node1, node2, data->start_axis, data->stop_axis)) {
+    /* check if node1 is a leaf */
+    if (!node1->totnode) {
+      /* check if node2 is a leaf */
+      if (!node2->totnode) {
+        BVHTreeOverlap overlap;
+
+        if (node1 == node2) {
+          return;
+        }
+
+        /* both leafs, insert overlap! */
+        overlap.indexA = node1->index;
+        overlap.indexB = node2->index;
+        data_thread->overlap->push(overlap);
+      }
+      else {
+        for (j = 0; j < data->tree2->tree_type; j++) {
+          if (node2->children[j]) {
+            tree_overlap_traverse(data_thread, node1, node2->children[j]);
+          }
+        }
+      }
+    }
+    else {
+      for (j = 0; j < data->tree1->tree_type; j++) {
+        if (node1->children[j]) {
+          tree_overlap_traverse(data_thread, node1->children[j], node2);
+        }
+      }
+    }
+  }
+}
+
+BVHTreeOverlap *BVHTree_overlap_ex(
+    const BVHTree *tree1,
+    const BVHTree *tree2,
+    unsigned int *r_overlap_tot,
+    /* optional callback to test the overlap before adding (must be thread-safe!) */
+    BVHTree_OverlapCallback callback,
+    void *userdata,
+    const unsigned int max_interactions,
+    const int flag)
+{
+  bool overlap_pairs = (flag & BVH_OVERLAP_RETURN_PAIRS) != 0;
+  /* bool use_threading = (flag & BVH_OVERLAP_USE_THREADING) != 0 && */
+  /*                      (tree1->totleaf > KDOPBVH_THREAD_LEAF_THRESHOLD); */
+  bool use_threading = false;
+
+  /* `RETURN_PAIRS` was not implemented without `max_interations`. */
+  assert(overlap_pairs || max_interactions);
+
+  const int root_node_len = BVHTree_overlap_thread_num(tree1);
+  /* const int thread_num = use_threading ? root_node_len : 1; */
+  const int thread_num = 1;
+  int j;
+  size_t total = 0;
+  BVHTreeOverlap *overlap = NULL, *to = NULL;
+  BVHOverlapData_Shared data_shared;
+  BVHOverlapData_Thread *data = new BVHOverlapData_Thread[thread_num];
+  axis_t start_axis, stop_axis;
+
+  /* check for compatibility of both trees (can't compare 14-DOP with 18-DOP) */
+  if ((tree1->axis != tree2->axis) && (tree1->axis == 14 || tree2->axis == 14) &&
+      (tree1->axis == 18 || tree2->axis == 18)) {
+    assert(0);
+    return NULL;
+  }
+
+  const BVHNode *root1 = tree1->nodes[tree1->totleaf];
+  const BVHNode *root2 = tree2->nodes[tree2->totleaf];
+
+  start_axis = min_axis(tree1->start_axis, tree2->start_axis);
+  stop_axis = min_axis(tree1->stop_axis, tree2->stop_axis);
+
+  /* fast check root nodes for collision before doing big splitting + traversal */
+  if (!tree_overlap_test(root1, root2, start_axis, stop_axis)) {
+    return NULL;
+  }
+
+  data_shared.tree1 = tree1;
+  data_shared.tree2 = tree2;
+  data_shared.start_axis = start_axis;
+  data_shared.stop_axis = stop_axis;
+
+  /* can be NULL */
+  data_shared.callback = callback;
+  data_shared.userdata = userdata;
+
+  for (j = 0; j < thread_num; j++) {
+    /* init BVHOverlapData_Thread */
+    data[j].shared = &data_shared;
+    data[j].overlap = overlap_pairs ? new stack<BVHTreeOverlap> : NULL;
+    data[j].max_interactions = max_interactions;
+
+    /* for callback */
+    data[j].thread = j;
+  }
+
+  if (use_threading) {
+    /* TaskParallelSettings settings; */
+    /* BLI_parallel_range_settings_defaults(&settings); */
+    /* settings.min_iter_per_thread = 1; */
+    /* BLI_task_parallel_range(0, root_node_len, data, bvhtree_overlap_task_cb, &settings); */
+  }
+  else {
+    if (max_interactions) {
+      tree_overlap_traverse_num(data, root1, root2);
+    }
+    else if (callback) {
+      tree_overlap_traverse_cb(data, root1, root2);
+    }
+    else {
+      tree_overlap_traverse(data, root1, root2);
+    }
+  }
+
+  if (overlap_pairs) {
+    for (j = 0; j < thread_num; j++) {
+      total += data[j].overlap->size();
+    }
+
+    to = overlap = new BVHTreeOverlap[total];
+
+    for (j = 0; j < thread_num; j++) {
+      unsigned int count = (unsigned int)data[j].overlap->size();
+      for (unsigned int stack_count_index = 0; stack_count_index < count; stack_count_index++) {
+        to[stack_count_index] = data[j].overlap->top();
+        data[j].overlap->pop();
+      }
+      delete data[j].overlap;
+      to += count;
+    }
+    *r_overlap_tot = (unsigned int)total;
+  }
+
+  return overlap;
+}
+
+BVHTreeOverlap *BVHTree_overlap(
+    const BVHTree *tree1,
+    const BVHTree *tree2,
+    unsigned int *r_overlap_tot,
+    /* optional callback to test the overlap before adding (must be thread-safe!) */
+    BVHTree_OverlapCallback callback,
+    void *userdata)
+{
+  /* TODO(ish): add multithreading support */
+  return BVHTree_overlap_ex(
+      tree1, tree2, r_overlap_tot, callback, userdata, 0, BVH_OVERLAP_RETURN_PAIRS);
+}
