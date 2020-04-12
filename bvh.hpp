@@ -47,4 +47,9 @@ void BVHTree_free(BVHTree *tree);
 void BVHTree_insert(BVHTree *tree, int index, const float co[3], int numpoints);
 void BVHTree_balance(BVHTree *tree);
 
+/* update: first update points/nodes, then call update_tree to refit the bounding volumes */
+bool BVHTree_update_node(
+    BVHTree *tree, int index, const float co[3], const float co_moving[3], int numpoints);
+void BVHTree_update_tree(BVHTree *tree);
+
 #endif

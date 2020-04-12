@@ -559,3 +559,77 @@ void BVHTree_insert(BVHTree *tree, int index, const float co[3], int numpoints)
     node->bv[(2 * axis_iter) + 1] += tree->epsilon; /* maximum */
   }
 }
+
+/* call before BLI_bvhtree_update_tree() */
+bool BVHTree_update_node(
+    BVHTree *tree, int index, const float co[3], const float co_moving[3], int numpoints)
+{
+  BVHNode *node = NULL;
+  axis_t axis_iter;
+
+  /* check if index exists */
+  if (index > tree->totleaf) {
+    return false;
+  }
+
+  node = tree->nodearray + index;
+
+  create_kdop_hull(tree, node, co, numpoints, 0);
+
+  if (co_moving) {
+    create_kdop_hull(tree, node, co_moving, numpoints, 1);
+  }
+
+  /* inflate the bv with some epsilon */
+  for (axis_iter = tree->start_axis; axis_iter < tree->stop_axis; axis_iter++) {
+    node->bv[(2 * axis_iter)] -= tree->epsilon;     /* minimum */
+    node->bv[(2 * axis_iter) + 1] += tree->epsilon; /* maximum */
+  }
+
+  return true;
+}
+
+/**
+ * bottom-up update of bvh node BV
+ * join the children on the parent BV */
+static void node_join(BVHTree *tree, BVHNode *node)
+{
+  int i;
+  axis_t axis_iter;
+
+  node_minmax_init(tree, node);
+
+  for (i = 0; i < tree->tree_type; i++) {
+    if (node->children[i]) {
+      for (axis_iter = tree->start_axis; axis_iter < tree->stop_axis; axis_iter++) {
+        /* update minimum */
+        if (node->children[i]->bv[(2 * axis_iter)] < node->bv[(2 * axis_iter)]) {
+          node->bv[(2 * axis_iter)] = node->children[i]->bv[(2 * axis_iter)];
+        }
+
+        /* update maximum */
+        if (node->children[i]->bv[(2 * axis_iter) + 1] > node->bv[(2 * axis_iter) + 1]) {
+          node->bv[(2 * axis_iter) + 1] = node->children[i]->bv[(2 * axis_iter) + 1];
+        }
+      }
+    }
+    else {
+      break;
+    }
+  }
+}
+
+/* call BLI_bvhtree_update_node() first for every node/point/triangle */
+void BVHTree_update_tree(BVHTree *tree)
+{
+  /* Update bottom=>top
+   * TRICKY: the way we build the tree all the childs have an index greater than the parent
+   * This allows us todo a bottom up update by starting on the bigger numbered branch */
+
+  BVHNode **root = tree->nodes + tree->totleaf;
+  BVHNode **index = tree->nodes + tree->totleaf + tree->totbranch - 1;
+
+  for (; index >= root; index--) {
+    node_join(tree, *index);
+  }
+}
