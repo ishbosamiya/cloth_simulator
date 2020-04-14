@@ -201,7 +201,7 @@ class Mesh : public Primitive {
   vector<Node *> nodes;
   vector<Edge *> edges;
   vector<Face *> faces;
-  BVHNode *bvh; /* The BVH for the mesh */
+  BVHTree *bvh; /* The BVH for the mesh */
 
   virtual void add(Vert *vert);
   virtual void add(Node *node);
@@ -258,9 +258,10 @@ class Mesh : public Primitive {
   void deleteBVH();
   void drawBVH(glm::mat4 &projection, glm::mat4 &view)
   {
-    if (bvh) {
-      bvh->draw(projection, view);
-    }
+    /* TODO(ish): need to add drawing functionality */
+    /* if (bvh) { */
+    /*   bvh->draw(projection, view); */
+    /* } */
   }
 
   ~Mesh()

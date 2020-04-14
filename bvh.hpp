@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <stack>
 
+using namespace std;
+
 /* Blender's kdopbvh turned into cpp version */
 
 #define MAX_TREETYPE 32
@@ -16,7 +18,7 @@ class BVHNode {
  public:
   BVHNode **children;
   BVHNode *parent; /* some user defined traversed need that */
-  double *bv;      /* Bounding volume of all nodes, max 13 axis */
+  float *bv;       /* Bounding volume of all nodes, max 13 axis */
   int index;       /* face, edge, vertex index */
   char totnode;    /* how many nodes are used, used for speedup */
   char main_axis;  /* Axis used to split this node */

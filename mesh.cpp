@@ -362,13 +362,28 @@ void Mesh::unapplyTransformation()
 void Mesh::buildBVH()
 {
   assert(bvh == NULL);
-  bvh = new BVHNode((Primitive **)&faces[0], faces.size());
+  float epsilon = 0.01;
+  bvh = BVHTree_new(faces.size(), epsilon, 4, 26);
+
+  for (int i = 0; i < faces.size(); i++) {
+    float co[3][3];
+
+    vec3ToFloatVec3(faces[i]->v[0]->node->x, co[0]);
+    vec3ToFloatVec3(faces[i]->v[1]->node->x, co[1]);
+    vec3ToFloatVec3(faces[i]->v[2]->node->x, co[2]);
+
+    BVHTree_insert(bvh, i, co[0], 3);
+  }
+
+  BVHTree_balance(bvh);
 }
 
 void Mesh::deleteBVH()
 {
-  delete bvh;
-  bvh = NULL;
+  if (bvh) {
+    BVHTree_free(bvh);
+    bvh = NULL;
+  }
 }
 
 void Mesh::deleteMesh()

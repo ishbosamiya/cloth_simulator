@@ -1,5 +1,21 @@
 #include "bvh.hpp"
 
+const float bvhtree_kdop_axes[13][3] = {
+    {1.0, 0, 0},
+    {0, 1.0, 0},
+    {0, 0, 1.0},
+    {1.0, 1.0, 1.0},
+    {1.0, -1.0, 1.0},
+    {1.0, 1.0, -1.0},
+    {1.0, -1.0, -1.0},
+    {1.0, 1.0, 0},
+    {1.0, 0, 1.0},
+    {0, 1.0, 1.0},
+    {1.0, -1.0, 0},
+    {1.0, 0, -1.0},
+    {0, 1.0, -1.0},
+};
+
 /* This functions returns the number of branches needed to have the requested number of leafs. */
 static int implicit_needed_branches(int tree_type, int leafs)
 {
@@ -19,7 +35,7 @@ BVHTree *BVHTree_new(int maxsize, float epsilon, char tree_type, char axis)
    * so that tangent rays can still hit a bounding volume..
    * this bug would show up when casting a ray aligned with a kdop-axis
    * and with an edge of 2 faces */
-  epsilon = max(FLT_EPSILON, epsilon);
+  epsilon = max(__FLT_EPSILON__, epsilon);
 
   if (tree) {
     tree->epsilon = epsilon;
@@ -57,9 +73,9 @@ BVHTree *BVHTree_new(int maxsize, float epsilon, char tree_type, char axis)
     /* Allocate arrays */
     numnodes = maxsize + implicit_needed_branches(tree_type, maxsize) + tree_type;
 
-    tree->nodes = new (BVHNode *)[numnodes];
+    tree->nodes = new BVHNode *[numnodes];
     tree->nodebv = new float[axis * numnodes];
-    tree->nodechild = new (BVHNode *)[tree_type * numnodes];
+    tree->nodechild = new BVHNode *[tree_type * numnodes];
     tree->nodearray = new BVHNode[numnodes];
 
     if ((!tree->nodes) || (!tree->nodebv) || (!tree->nodechild) || (!tree->nodearray)) {
@@ -145,8 +161,8 @@ static void node_minmax_init(const BVHTree *tree, BVHNode *node)
   float(*bv)[2] = (float(*)[2])node->bv;
 
   for (axis_iter = tree->start_axis; axis_iter != tree->stop_axis; axis_iter++) {
-    bv[axis_iter][0] = FLT_MAX;
-    bv[axis_iter][1] = -FLT_MAX;
+    bv[axis_iter][0] = numeric_limits<float>::max();
+    bv[axis_iter][1] = -numeric_limits<float>::max();
   }
 }
 
@@ -453,17 +469,16 @@ static void non_recursive_bvh_div_nodes(const BVHTree *tree,
 
   build_implicit_tree_helper(tree, &data);
 
-  BVHDivNodesData cb_data = {
-      .tree = tree,
-      .branches_array = branches_array,
-      .leafs_array = leafs_array,
-      .tree_type = tree_type,
-      .tree_offset = tree_offset,
-      .data = &data,
-      .first_of_next_level = 0,
-      .depth = 0,
-      .i = 0,
-  };
+  BVHDivNodesData cb_data;
+  cb_data.tree = tree;
+  cb_data.branches_array = branches_array;
+  cb_data.leafs_array = leafs_array;
+  cb_data.tree_type = tree_type;
+  cb_data.tree_offset = tree_offset;
+  cb_data.data = &data;
+  cb_data.first_of_next_level = 0;
+  cb_data.depth = 0;
+  cb_data.i = 0;
 
   /* Loop tree levels (log N) loops */
   for (i = 1, depth = 1; i <= num_branches; i = i * tree_type + tree_offset, depth++) {

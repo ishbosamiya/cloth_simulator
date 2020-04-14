@@ -413,13 +413,9 @@ void Simulation::solveCollisions(Mesh *ob_mesh)
     /*     } */
     /*   } */
     /* } */
-    vector<glm::vec3> pos_box;
-    vector<unsigned int> indices_box;
-    vector<BVHTreeOverlapResult> overlap_result;
-    int user_data_useless;
-    mesh->bvh->overlap(
-        ob_mesh->bvh, pos_box, indices_box, NULL, &user_data_useless, overlap_result);
-    unsigned int overlap_size = overlap_result.size();
+    unsigned int overlap_size;
+    BVHTreeOverlap *overlap_result = BVHTree_overlap(
+        mesh->bvh, ob_mesh->bvh, &overlap_size, NULL, NULL);
 
     /* for (int i = 0; i < overlap_size; i++) { */
     /*   cout << "overlap: " << overlap_result[i].indexA << " " << overlap_result[i].indexB <<

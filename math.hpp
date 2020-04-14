@@ -679,4 +679,11 @@ inline Vec3 glmVec4ToVec3(const glm::vec4 &v)
   return Vec3(v[0], v[1], v[2]);
 }
 
+inline void vec3ToFloatVec3(const Vec3 &v, float r[3])
+{
+  r[0] = v[0];
+  r[1] = v[1];
+  r[2] = v[2];
+}
+
 #endif
