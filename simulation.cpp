@@ -413,7 +413,7 @@ void Simulation::solveCollisions(Mesh *ob_mesh)
     /*     } */
     /*   } */
     /* } */
-    unsigned int overlap_size;
+    unsigned int overlap_size = 0;
     BVHTreeOverlap *overlap_result = BVHTree_overlap(
         mesh->bvh, ob_mesh->bvh, &overlap_size, NULL, NULL);
 
@@ -431,6 +431,7 @@ void Simulation::solveCollisions(Mesh *ob_mesh)
         count++;
       }
     }
+    free(overlap_result);
     /* static Shader line_shader("shaders/line.vert", "shaders/line.frag"); */
     /* line_shader.use(); */
     /* line_shader.setMat4("projection", projection); */

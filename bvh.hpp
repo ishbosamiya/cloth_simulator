@@ -5,6 +5,7 @@
 #include <limits>
 #include <algorithm>
 #include <stack>
+#include <cstdlib>
 
 using namespace std;
 
@@ -22,6 +23,16 @@ class BVHNode {
   int index;       /* face, edge, vertex index */
   char totnode;    /* how many nodes are used, used for speedup */
   char main_axis;  /* Axis used to split this node */
+
+  BVHNode()
+  {
+    children = NULL;
+    parent = NULL;
+    bv = NULL;
+    index = 0;
+    totnode = 0;
+    main_axis = 0;
+  }
 };
 
 /* keep under 26 bytes for speed purposes */
@@ -37,12 +48,33 @@ class BVHTree {
   axis_t start_axis, stop_axis; /* bvhtree_kdop_axes array indices according to axis */
   axis_t axis;                  /* kdop type (6 => OBB, 7 => AABB, ...) */
   char tree_type;               /* type of tree (4 => quadtree) */
+
+  BVHTree()
+  {
+    nodes = NULL;
+    nodearray = NULL;
+    nodechild = NULL;
+    nodebv = NULL;
+    epsilon = 0;
+    totleaf = 0;
+    totbranch = 0;
+    start_axis = 0;
+    stop_axis = 0;
+    axis = 0;
+    tree_type = 0;
+  }
 };
 
 class BVHTreeOverlap {
  public:
   int indexA;
   int indexB;
+
+  BVHTreeOverlap()
+  {
+    indexA = -1;
+    indexB = -1;
+  }
 };
 
 enum {
@@ -61,6 +93,16 @@ struct BVHOverlapData_Shared {
   /* use for callbacks */
   BVHTree_OverlapCallback callback;
   void *userdata;
+
+  BVHOverlapData_Shared()
+  {
+    tree1 = NULL;
+    tree2 = NULL;
+    start_axis = 0;
+    stop_axis = 0;
+    callback = NULL;
+    userdata = NULL;
+  }
 };
 
 struct BVHOverlapData_Thread {
@@ -69,6 +111,14 @@ struct BVHOverlapData_Thread {
   unsigned int max_interactions;
   /* use for callbacks */
   int thread;
+
+  BVHOverlapData_Thread()
+  {
+    shared = NULL;
+    overlap = NULL;
+    max_interactions = 0;
+    thread = 0;
+  }
 };
 
 BVHTree *BVHTree_new(int maxsize, float epsilon, char tree_type, char axis);
