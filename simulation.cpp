@@ -404,26 +404,10 @@ void Simulation::solveCollisions(Mesh *ob_mesh)
       node->impulse_count = 0;
       node->impulse_normal = Vec3(0.0d);
     }
-    /* for (int i = 0; i < mesh->faces.size(); i++) { */
-    /*   ClothFace *fm = static_cast<ClothFace *>(mesh->faces[i]); */
-    /*   for (int j = 0; j < ob_mesh->faces.size(); j++) { */
-    /*     Face *fo = ob_mesh->faces[j]; */
-    /*     if (checkProximity(fm, fo, dt)) { */
-    /*       count++; */
-    /*     } */
-    /*   } */
-    /* } */
+
     unsigned int overlap_size = 0;
     BVHTreeOverlap *overlap_result = BVHTree_overlap(
         mesh->bvh, ob_mesh->bvh, &overlap_size, NULL, NULL);
-
-    /* for (int i = 0; i < overlap_size; i++) { */
-    /*   cout << "overlap: " << overlap_result[i].indexA << " " << overlap_result[i].indexB <<
-     * endl; */
-    /* } */
-    /* if (overlap_size) { */
-    /*   cout << endl; */
-    /* } */
     for (int i = 0; i < overlap_size; i++) {
       ClothFace *f1 = static_cast<ClothFace *>(mesh->faces[overlap_result[i].indexA]);
       Face *f2 = ob_mesh->faces[overlap_result[i].indexB];
@@ -431,7 +415,8 @@ void Simulation::solveCollisions(Mesh *ob_mesh)
         count++;
       }
     }
-    free(overlap_result);
+    delete[] overlap_result;
+
     /* static Shader line_shader("shaders/line.vert", "shaders/line.frag"); */
     /* line_shader.use(); */
     /* line_shader.setMat4("projection", projection); */
@@ -448,8 +433,8 @@ void Simulation::solveCollisions(Mesh *ob_mesh)
         continue;
       }
       double mass = mesh->mass_matrix.coeff(node->index * 3, node->index * 3);
-      cout << "node->impulse_count: " << node->impulse_count << " node->I: " << node->I
-           << " node->impulse_normal: " << node->impulse_normal << " dt: " << dt << endl;
+      /* cout << "node->impulse_count: " << node->impulse_count << " node->I: " << node->I */
+      /*      << " node->impulse_normal: " << node->impulse_normal << " dt: " << dt << endl; */
       node->I /= (double)node->impulse_count;
       node->v = node->v - ((node->I / mass) * node->impulse_normal);
       node->x0 = node->x0 + (dt * node->v);
@@ -457,10 +442,9 @@ void Simulation::solveCollisions(Mesh *ob_mesh)
   }
   ob_mesh->deleteBVH();
   mesh->deleteBVH();
-
-  cout << "count: " << count << " ob_mesh->faces.size(): " << ob_mesh->faces.size()
-       << " mesh->faces.size(): " << mesh->faces.size()
-       << " mesh->nodes.size(): " << mesh->nodes.size() << endl;
+  /* cout << "count: " << count << " ob_mesh->faces.size(): " << ob_mesh->faces.size() */
+  /*      << " mesh->faces.size(): " << mesh->faces.size() */
+  /*      << " mesh->nodes.size(): " << mesh->nodes.size() << endl; */
 }
 
 void Simulation::solveCollisions()

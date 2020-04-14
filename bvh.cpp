@@ -29,8 +29,7 @@ BVHTree *BVHTree_new(int maxsize, float epsilon, char tree_type, char axis)
 
   assert(tree_type >= 2 && tree_type <= MAX_TREETYPE);
 
-  tree = (BVHTree *)calloc(sizeof(BVHTree), 1);
-  /* tree = new BVHTree; */
+  tree = new BVHTree;
 
   /* tree epsilon must be >= FLT_EPSILON
    * so that tangent rays can still hit a bounding volume..
@@ -74,17 +73,12 @@ BVHTree *BVHTree_new(int maxsize, float epsilon, char tree_type, char axis)
     /* Allocate arrays */
     numnodes = maxsize + implicit_needed_branches(tree_type, maxsize) + tree_type;
 
-    tree->nodes = (BVHNode **)calloc(sizeof(BVHNode *), numnodes);
-    tree->nodebv = (float *)calloc(sizeof(float), axis * numnodes);
-    tree->nodechild = (BVHNode **)calloc(sizeof(BVHNode *), tree_type * numnodes);
-    tree->nodearray = (BVHNode *)calloc(sizeof(BVHNode), numnodes);
-    /* TODO(ish): figure out why calloc works but new doesn't work
-     * A possible solution to use new might be to add a loop to make
-     * all the array elements NULL/0 */
-    /* tree->nodes = new BVHNode *[numnodes]; */
-    /* tree->nodebv = new float[axis * numnodes]; */
-    /* tree->nodechild = new BVHNode *[tree_type * numnodes]; */
-    /* tree->nodearray = new BVHNode[numnodes]; */
+    /* Must set them all to NULL/0 to avoid junk value leading to
+     * errors, this is done by the "[]();" () part of the "new" operator */
+    tree->nodes = new BVHNode *[numnodes]();
+    tree->nodebv = new float[axis * numnodes]();
+    tree->nodechild = new BVHNode *[tree_type * numnodes]();
+    tree->nodearray = new BVHNode[numnodes]();
 
     if ((!tree->nodes) || (!tree->nodebv) || (!tree->nodechild) || (!tree->nodearray)) {
       BVHTree_free(tree);
@@ -102,44 +96,24 @@ BVHTree *BVHTree_new(int maxsize, float epsilon, char tree_type, char axis)
 
 void BVHTree_free(BVHTree *tree)
 {
-  /* if (tree) { */
-  /*   if (tree->nodes) { */
-  /*     delete[] tree->nodes; */
-  /*     tree->nodes = NULL; */
-  /*   } */
-  /*   if (tree->nodearray) { */
-  /*     delete[] tree->nodearray; */
-  /*     tree->nodearray = NULL; */
-  /*   } */
-  /*   if (tree->nodebv) { */
-  /*     delete[] tree->nodebv; */
-  /*     tree->nodebv = NULL; */
-  /*   } */
-  /*   if (tree->nodechild) { */
-  /*     delete[] tree->nodechild; */
-  /*     tree->nodechild = NULL; */
-  /*   } */
-  /*   delete tree; */
-  /*   tree = NULL; */
-  /* } */
   if (tree) {
     if (tree->nodes) {
-      free(tree->nodes);
+      delete[] tree->nodes;
       tree->nodes = NULL;
     }
     if (tree->nodearray) {
-      free(tree->nodearray);
+      delete[] tree->nodearray;
       tree->nodearray = NULL;
     }
     if (tree->nodebv) {
-      free(tree->nodebv);
+      delete[] tree->nodebv;
       tree->nodebv = NULL;
     }
     if (tree->nodechild) {
-      free(tree->nodechild);
+      delete[] tree->nodechild;
       tree->nodechild = NULL;
     }
-    free(tree);
+    delete tree;
     tree = NULL;
   }
 }
@@ -939,8 +913,7 @@ BVHTreeOverlap *BVHTree_overlap_ex(
       total += data[j].overlap->size();
     }
 
-    /* to = overlap = new BVHTreeOverlap[total]; */
-    to = overlap = (BVHTreeOverlap *)malloc(sizeof(BVHTreeOverlap) * total);
+    to = overlap = new BVHTreeOverlap[total];
 
     for (j = 0; j < thread_num; j++) {
       unsigned int count = (unsigned int)data[j].overlap->size();
