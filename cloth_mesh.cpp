@@ -249,3 +249,29 @@ void ClothMesh::unapplyTransformation()
     }
   }
 }
+
+void ClothMesh::updateBVH()
+{
+  assert(bvh != NULL);
+  int faces_size = faces.size();
+
+  for (int i = 0; i < faces_size; i++) {
+    float co[3][3];
+    float co_moving[3][3];
+    ClothNode *node_0 = static_cast<ClothNode *>(faces[i]->v[0]->node);
+    ClothNode *node_1 = static_cast<ClothNode *>(faces[i]->v[1]->node);
+    ClothNode *node_2 = static_cast<ClothNode *>(faces[i]->v[2]->node);
+
+    vec3ToFloatVec3(node_0->x0, co[0]);
+    vec3ToFloatVec3(node_1->x0, co[1]);
+    vec3ToFloatVec3(node_2->x0, co[2]);
+
+    vec3ToFloatVec3(node_0->x, co_moving[0]);
+    vec3ToFloatVec3(node_1->x, co_moving[1]);
+    vec3ToFloatVec3(node_2->x, co_moving[2]);
+
+    BVHTree_update_node(bvh, i, co[0], co_moving[0], 3);
+  }
+
+  BVHTree_update_tree(bvh);
+}

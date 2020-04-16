@@ -363,9 +363,10 @@ void Mesh::buildBVH()
 {
   assert(bvh == NULL);
   float epsilon = 0.01;
-  bvh = BVHTree_new(faces.size(), epsilon, 4, 26);
+  int faces_size = faces.size();
+  bvh = BVHTree_new(faces_size, epsilon, 4, 26);
 
-  for (int i = 0; i < faces.size(); i++) {
+  for (int i = 0; i < faces_size; i++) {
     float co[3][3];
 
     vec3ToFloatVec3(faces[i]->v[0]->node->x, co[0]);
@@ -376,6 +377,24 @@ void Mesh::buildBVH()
   }
 
   BVHTree_balance(bvh);
+}
+
+void Mesh::updateBVH()
+{
+  assert(bvh != NULL);
+  int faces_size = faces.size();
+
+  for (int i = 0; i < faces_size; i++) {
+    float co[3][3];
+
+    vec3ToFloatVec3(faces[i]->v[0]->node->x, co[0]);
+    vec3ToFloatVec3(faces[i]->v[1]->node->x, co[1]);
+    vec3ToFloatVec3(faces[i]->v[2]->node->x, co[2]);
+
+    BVHTree_update_node(bvh, i, co[0], NULL, 3);
+  }
+
+  BVHTree_update_tree(bvh);
 }
 
 void Mesh::deleteBVH()

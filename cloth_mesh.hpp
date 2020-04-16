@@ -176,6 +176,8 @@ class ClothMesh : public Mesh {
   void applyTransformation();
   void unapplyTransformation();
 
+  void updateBVH();
+
   ~ClothMesh()
   {
   }

@@ -8,6 +8,7 @@
 #include "math.hpp"
 #include "constraint.hpp"
 #include "misc.hpp"
+#include "collision.hpp"
 
 using namespace std;
 
@@ -17,6 +18,8 @@ using namespace std;
  * [1] Fast Simulation of Mass Spring Systems */
 
 class Simulation {
+  friend class Collision;
+
  private:
   double h; /* time step */
 
@@ -64,23 +67,6 @@ class Simulation {
 
   void integrateLocalGlobalOneIteration(EigenVecX &r_x, bool run_prefactorization);
   void integrateOptimization();
-
-  bool checkProximity(ClothNode *n, Face *f, Vec3 &r_bary_coords);
-  bool findImpulse(const Vec3 &x1,
-                   const Vec3 &x2,
-                   const Vec3 &x3,
-                   const Vec3 &x4,
-                   const Vec3 &bary_coords,
-                   const Vec3 &normal,
-                   double v_n,
-                   double mass,
-                   double dt,
-                   double &r_impulse);
-  void applyRepulsion(ClothNode *n, Face *f, const Vec3 &bary_coords, double dt);
-  bool checkProximity(ClothFace *f1, Face *f2, double dt);
-  bool test(Primitive *pf1, Primitive *pf2, const double dt, vector<bool> &r_result);
-  void solveCollisions(Mesh *ob_mesh);
-  void solveCollisions();
 
   void setConstraints();
   void clearConstraints();

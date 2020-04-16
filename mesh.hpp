@@ -255,6 +255,7 @@ class Mesh : public Primitive {
   }
 
   void buildBVH();
+  void updateBVH();
   void deleteBVH();
   void drawBVH(glm::mat4 &projection, glm::mat4 &view)
   {
