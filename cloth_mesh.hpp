@@ -42,12 +42,13 @@ class ClothVert : public Vert {
 /* Stores the World Space coordinates */
 class ClothNode : public Node {
  public:
-  Vec3 x0;             /* previous world space position of node */
-  Vec3 v;              /* world space velocity of node */
-  double I;            /* impulse (used in collision) */
-  int impulse_count;   /* impulse count for averaging the impulse */
-  Vec3 impulse_normal; /* normal (may not be normalized) for averaging
-                        * the impulse */
+  Vec3 x0;           /* previous world space position of node */
+  Vec3 v;            /* world space velocity of node */
+  Vec3 tv;           /* temporary velocity, used during collision. When finding
+                      * the intermediate velocity after proximity resolution */
+  int impulse_count; /* impulse count for averaging the impulse */
+  Vec3 impulse;      /* impulse with the direction for averaging
+                      * the impulse */
 
   ClothNode() : Node()
   {
