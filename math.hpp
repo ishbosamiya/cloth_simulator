@@ -250,6 +250,11 @@ typedef Vec<2> Vec2;
 typedef Vec<3> Vec3;
 typedef Vec<4> Vec4;
 
+inline Vec3 interp(const Vec3 &a, const Vec3 &b, const Vec3 &c, const Vec3 &bary_coords)
+{
+  return (a * bary_coords[0]) + (b * bary_coords[1]) + (c * bary_coords[2]);
+}
+
 #define VecnT Vec<n, T>
 #define VecmT Vec<m, T>
 #define MatmnT Mat<m, n, T>
@@ -646,7 +651,9 @@ typedef Mat<2, 3> Mat2x3;
 typedef Mat<4, 4> Mat4x4;
 
 /* Eigen Declarations */
+typedef Eigen::Matrix<double, 2, 2, 0, 2, 2> EigenMat2;
 typedef Eigen::Matrix<double, 3, 3, 0, 3, 3> EigenMat3;
+typedef Eigen::Matrix<double, 2, 1, 0, 2, 1> EigenVec2;
 typedef Eigen::Matrix<double, 3, 1, 0, 3, 1> EigenVec3;
 typedef Eigen::Matrix<double, Eigen::Dynamic, 1> EigenVecX;
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> EigenMatX;
@@ -684,6 +691,11 @@ inline void vec3ToFloatVec3(const Vec3 &v, float r[3])
   r[0] = v[0];
   r[1] = v[1];
   r[2] = v[2];
+}
+
+inline Vec3 normal(Vec3 a0, Vec3 b0, Vec3 c0)
+{
+  return cross(b0 - a0, c0 - a0);
 }
 
 #endif

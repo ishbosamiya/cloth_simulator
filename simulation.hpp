@@ -89,7 +89,7 @@ class Simulation {
     wind_direction = normalize(Vec3(1.0, 0, 0));
     wind_strength = 5.0d;
     turbulence = 5.0d;
-    cloth_thickness = 0.001d;
+    cloth_thickness = 0.01d;
 
     obstacle_meshes.clear();
 

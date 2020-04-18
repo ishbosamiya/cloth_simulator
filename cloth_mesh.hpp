@@ -49,6 +49,7 @@ class ClothNode : public Node {
   int impulse_count; /* impulse count for averaging the impulse */
   Vec3 impulse;      /* impulse with the direction for averaging
                       * the impulse */
+  double mass;       /* Mass of Node */
 
   ClothNode() : Node()
   {
@@ -77,10 +78,10 @@ class ClothEdge : public Edge {
 /* Only triangles */
 class ClothFace : public Face {
  public:
-  double area, mass;
+  double area;
   Mat3x3 dm, dm_inv; /* required data for remeshing step */
 
-  ClothFace() : Face(), area(0.0f), mass(0.0f)
+  ClothFace() : Face(), area(0.0f)
   {
     type = PRIMITIVE_FACE;
   }

@@ -28,6 +28,7 @@
  *     implement solving cubic equaltion and RIZ
  */
 
+#include <iostream>
 #include <vector>
 
 #include "simulation.hpp"
@@ -43,6 +44,7 @@ class Simulation;
 class Collision {
  private:
   Simulation *simulation;
+  double collision_timestep;
   void buildBVH();
   void deleteBVH();
 
@@ -52,20 +54,13 @@ class Collision {
   void solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh);
 
  public:
-  Collision(Simulation *simulation)
-  {
-    this->simulation = simulation;
-    buildBVH();
-  }
+  Collision(Simulation *simulation);
 
   /* rebuild_bvh is necessary when the mesh structure has changed, eg:
    * adaptive remeshing of the cloth */
   void solveCollision(bool rebuild_bvh = false);
 
-  ~Collision()
-  {
-    deleteBVH();
-  }
+  ~Collision();
 };
 
 #endif

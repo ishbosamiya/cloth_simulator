@@ -213,11 +213,6 @@ void Simulation::dampVelocity()
   }
 }
 
-static inline Vec3 normal(Vec3 a0, Vec3 b0, Vec3 c0)
-{
-  return cross(b0 - a0, c0 - a0);
-}
-
 static inline bool check_abcd(const Vec3 &p0,
                               const Vec3 &a0,
                               const Vec3 &b0,
@@ -291,6 +286,8 @@ void Simulation::update()
   integrateOptimization();
 
   /* TODO(ish): collision detection, adaptive remeshing */
+  Collision collision(this);
+  collision.solveCollision();
 
   dampVelocity();
 
@@ -376,8 +373,12 @@ void Simulation::reset()
    * be done by ClothMesh */
   mesh->mass_matrix.resize(num_nodes * 3, num_nodes * 3);
   mesh->identity_matrix.resize(num_nodes * 3, num_nodes * 3);
-  double mass = 7.0f;
+  double mass = 1.0d;
   mass = mass / (double)num_nodes;
+  for (int i = 0; i < num_nodes; i++) {
+    ClothNode *node = static_cast<ClothNode *>(mesh->nodes[i]);
+    node->mass = mass;
+  }
   vector<EigenSparseMatrixTriplet> i_triplets;
   vector<EigenSparseMatrixTriplet> m_triplets;
   for (int i = 0; i < num_nodes * 3; i++) {

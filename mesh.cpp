@@ -405,6 +405,19 @@ void Mesh::deleteBVH()
   }
 }
 
+void Mesh::updateFaceNormals()
+{
+  int faces_size = faces.size();
+
+  for (int i = 0; i < faces_size; i++) {
+    Vec3 &x0 = faces[i]->v[0]->node->x;
+    Vec3 &x1 = faces[i]->v[1]->node->x;
+    Vec3 &x2 = faces[i]->v[2]->node->x;
+
+    faces[i]->n = normalize(normal(x0, x1, x2));
+  }
+}
+
 void Mesh::deleteMesh()
 {
   for (int i = 0; i < verts.size(); i++) {

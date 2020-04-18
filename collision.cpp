@@ -1,5 +1,19 @@
 #include "collision.hpp"
 
+Collision::Collision(Simulation *simulation)
+{
+  this->simulation = simulation;
+  /* TODO(ish): Currently timestep is not adaptive not allows
+   * substepping */
+  this->collision_timestep = this->simulation->h;
+  buildBVH();
+}
+
+Collision::~Collision()
+{
+  deleteBVH();
+}
+
 void Collision::buildBVH()
 {
   simulation->mesh->buildBVH();
@@ -20,15 +34,93 @@ void Collision::deleteBVH()
 
 void Collision::calculateImpulse(ClothNode *cloth_node, Face *face, Vec3 bary_coords)
 {
-  /* TODO(ish): calculate the impulse with respect to friction,
-   * repulsion, storing it in impulse and incrementing impulse_count*/
+  /* TODO(ish): calculate the impulse with respect to friction */
+
+  /* The relative normal velocity is given by
+   * dot(face->n, interp(face->v[0]->node->v, face->v[1]->node->v,
+   * face->v[2]->node->v, bary_coords)) - dot(face->n, cloth_node->v)
+   * Currently, since the obstacle doesn't have a velocity term, we
+   * need to consider this as 0 */
+  double vn = dot(cloth_node->v, face->n) - 0.0;
+  /* If vn < 0 then the node and the face are approaching each other */
+  if (vn > 0) {
+    cout << "node and face are not approaching each other: vn: " << vn
+         << " cloth_node->v: " << cloth_node->v << " face->n: " << face->n << endl;
+    return;
+  }
+  Vec3 &x1 = face->v[0]->node->x;
+  Vec3 &x2 = face->v[1]->node->x;
+  Vec3 &x3 = face->v[2]->node->x;
+  Vec3 &x4 = cloth_node->x0;
+  double d = simulation->cloth_thickness - dot(x4 - interp(x1, x2, x3, bary_coords), face->n);
+  if (vn >= 0.1 * d / collision_timestep) {
+    /* cout << "vn: " << vn << " 0.1 * d / collision_timestep: " << 0.1 * d / collision_timestep */
+    /*      << endl; */
+    return;
+  }
+
+  /* cout << "vn: " << vn << " 0.1 * d / collision_timestep: " << 0.1 * d / collision_timestep */
+  /*      << endl; */
+
+  double I = -min(collision_timestep * simulation->stiffness_stretch * d,
+                  cloth_node->mass * ((0.1 * d / collision_timestep) - vn));
+  /* TODO(ish): The paper might have a mistake because
+   * double I = cloth_node->mass * ((0.1 * d / collision_timestep) - vn);
+   * alone seems to work far better than the method mentioned by the paper */
+
+  /* I_bar is the adjusted impulse, section 7.1 from
+   * "Robust Treatment of Collisions, Contact, and Friction for Cloth
+   * Animation" */
+  double I_bar = 2.0 * I / (1 + norm2(bary_coords));
+  cloth_node->impulse += face->n * I_bar;
+  cloth_node->impulse_count++;
 }
 
 bool Collision::checkProximity(ClothNode *cloth_node, Face *face, Vec3 &r_bary_coords)
 {
-  /* TODO(ish): check for proximity of cloth_node->x0 with respect to
-   * face, currently static obstacle mesh, and also compute the
-   * respective barycentric coordinates */
+  /* Currently supports only static obstacle mesh */
+  /* Following "Robust Treatment of Collisions, Contact, and Friction
+   * for Cloth Animation"'s styling */
+  Vec3 &x1 = face->v[0]->node->x;
+  Vec3 &x2 = face->v[1]->node->x;
+  Vec3 &x3 = face->v[2]->node->x;
+  Vec3 &x4 = cloth_node->x0;
+  Vec3 x43 = x4 - x3;
+
+  /* Point x4 should be within simulation->cloth_thickness distance from the
+   * plane of the face */
+  if (fabs(dot(x43, face->n)) > simulation->cloth_thickness) {
+    cout << "x4 not close enough to face plane: distance: " << fabs(dot(x43, face->n)) << endl;
+    return false;
+  }
+
+  Vec3 x13 = x1 - x3;
+  Vec3 x23 = x2 - x3;
+
+  EigenMat2 mat;
+  mat << dot(x13, x13), dot(x13, x23), dot(x13, x23), dot(x23, x23);
+  EigenVec2 vec;
+  vec << dot(x13, x43), dot(x23, x43);
+  EigenVec2 w = mat.colPivHouseholderQr().solve(vec);
+
+  /* Characteristic length of triangle is square root of the area of
+   * the triangle */
+  double delta = simulation->cloth_thickness / sqrt(0.5 * norm((normal(x1, x2, x3))));
+  r_bary_coords[0] = w[0];
+  r_bary_coords[1] = w[1];
+  r_bary_coords[2] = 1.0 - (w[0] + w[1]);
+
+  /* barycentric coordinates must be within [-delta, 1 + delta] */
+  for (int i = 0; i < 3; i++) {
+    if (r_bary_coords[i] < -delta) {
+      return false;
+    }
+    if (r_bary_coords[i] > 1 + delta) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void Collision::checkProximityAndCalculateImpulse(ClothFace *cloth_face, Face *obstacle_face)
@@ -61,6 +153,10 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
   unsigned int overlap_size = 0;
   BVHTreeOverlap *overlap = BVHTree_overlap(
       cloth_mesh->bvh, obstacle_mesh->bvh, &overlap_size, NULL, NULL);
+  if (overlap_size == 0) {
+    /* cout << "no overlap found" << endl; */
+    return;
+  }
 
   setImpulseToZero(cloth_mesh);
 
@@ -72,6 +168,26 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
     Face *obstacle_face = obstacle_mesh->faces[obstacle_mesh_index];
 
     checkProximityAndCalculateImpulse(cloth_face, obstacle_face);
+  }
+  /* TEMP */
+  {
+    int num_nodes = cloth_mesh->nodes.size();
+    cout << "num_nodes: " << num_nodes << endl;
+    int count = 0;
+    for (int i = 0; i < num_nodes; i++) {
+      ClothNode *node = static_cast<ClothNode *>(cloth_mesh->nodes[i]);
+      if (node->impulse_count == 0) {
+        continue;
+      }
+
+      cout << "node->v: " << node->v << " node->impulse_count: " << node->impulse_count
+           << " node->impulse: " << node->impulse;
+      node->v = node->v - (node->impulse / (node->impulse_count * node->mass));
+      node->x = node->x0 + (collision_timestep * node->v);
+      cout << " node->v: " << node->v << endl;
+      count++;
+    }
+    cout << "count: " << count << endl;
   }
 
   /* TODO(ish): now that impulse in stored in the nodes of the
@@ -101,7 +217,9 @@ void Collision::solveCollision(bool rebuild_bvh)
     Mesh *obstacle_mesh = obstacle_meshes[i];
     /* Need to update BVH */
     obstacle_mesh->updateBVH();
+    obstacle_mesh->updateFaceNormals();
 
     solveCollision(cloth_mesh, obstacle_mesh);
+    cout << endl;
   }
 }

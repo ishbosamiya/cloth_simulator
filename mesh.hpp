@@ -265,6 +265,8 @@ class Mesh : public Primitive {
     /* } */
   }
 
+  void updateFaceNormals();
+
   ~Mesh()
   {
     deleteMesh();
