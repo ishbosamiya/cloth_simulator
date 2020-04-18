@@ -44,8 +44,6 @@ void Collision::calculateImpulse(ClothNode *cloth_node, Face *face, Vec3 bary_co
   double vn = dot(cloth_node->v, face->n) - 0.0;
   /* If vn < 0 then the node and the face are approaching each other */
   if (vn > 0) {
-    cout << "node and face are not approaching each other: vn: " << vn
-         << " cloth_node->v: " << cloth_node->v << " face->n: " << face->n << endl;
     return;
   }
   Vec3 &x1 = face->v[0]->node->x;
@@ -53,20 +51,9 @@ void Collision::calculateImpulse(ClothNode *cloth_node, Face *face, Vec3 bary_co
   Vec3 &x3 = face->v[2]->node->x;
   Vec3 &x4 = cloth_node->x0;
   double d = simulation->cloth_thickness - dot(x4 - interp(x1, x2, x3, bary_coords), face->n);
-  if (vn >= 0.1 * d / collision_timestep) {
-    /* cout << "vn: " << vn << " 0.1 * d / collision_timestep: " << 0.1 * d / collision_timestep */
-    /*      << endl; */
-    return;
-  }
-
-  /* cout << "vn: " << vn << " 0.1 * d / collision_timestep: " << 0.1 * d / collision_timestep */
-  /*      << endl; */
 
   double I = -min(collision_timestep * simulation->stiffness_stretch * d,
                   cloth_node->mass * ((0.1 * d / collision_timestep) - vn));
-  /* TODO(ish): The paper might have a mistake because
-   * double I = cloth_node->mass * ((0.1 * d / collision_timestep) - vn);
-   * alone seems to work far better than the method mentioned by the paper */
 
   /* I_bar is the adjusted impulse, section 7.1 from
    * "Robust Treatment of Collisions, Contact, and Friction for Cloth
@@ -90,7 +77,6 @@ bool Collision::checkProximity(ClothNode *cloth_node, Face *face, Vec3 &r_bary_c
   /* Point x4 should be within simulation->cloth_thickness distance from the
    * plane of the face */
   if (fabs(dot(x43, face->n)) > simulation->cloth_thickness) {
-    cout << "x4 not close enough to face plane: distance: " << fabs(dot(x43, face->n)) << endl;
     return false;
   }
 
@@ -154,7 +140,6 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
   BVHTreeOverlap *overlap = BVHTree_overlap(
       cloth_mesh->bvh, obstacle_mesh->bvh, &overlap_size, NULL, NULL);
   if (overlap_size == 0) {
-    /* cout << "no overlap found" << endl; */
     return;
   }
 
@@ -172,7 +157,6 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
   /* TEMP */
   {
     int num_nodes = cloth_mesh->nodes.size();
-    cout << "num_nodes: " << num_nodes << endl;
     int count = 0;
     for (int i = 0; i < num_nodes; i++) {
       ClothNode *node = static_cast<ClothNode *>(cloth_mesh->nodes[i]);
@@ -180,14 +164,10 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
         continue;
       }
 
-      cout << "node->v: " << node->v << " node->impulse_count: " << node->impulse_count
-           << " node->impulse: " << node->impulse;
       node->v = node->v - (node->impulse / (node->impulse_count * node->mass));
       node->x = node->x0 + (collision_timestep * node->v);
-      cout << " node->v: " << node->v << endl;
       count++;
     }
-    cout << "count: " << count << endl;
   }
 
   /* TODO(ish): now that impulse in stored in the nodes of the
@@ -220,6 +200,5 @@ void Collision::solveCollision(bool rebuild_bvh)
     obstacle_mesh->updateFaceNormals();
 
     solveCollision(cloth_mesh, obstacle_mesh);
-    cout << endl;
   }
 }
