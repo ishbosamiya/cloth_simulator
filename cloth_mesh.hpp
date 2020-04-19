@@ -125,43 +125,45 @@ class ClothFace : public Face {
 class ClothMesh : public Mesh {
  private:
  public:
-  ClothMesh() : Mesh()
+  ClothMesh() : Mesh(), coeff_friction(0)
   {
   }
 
-  ClothMesh(const string &filename)
-  {
-    loadObj(filename);
-  }
-
-  ClothMesh(const string &filename, Shader *shader) : Mesh(shader)
+  ClothMesh(const string &filename) : coeff_friction(0)
   {
     loadObj(filename);
   }
 
-  ClothMesh(const string &filename, Vec3 pos) : Mesh(pos)
+  ClothMesh(const string &filename, Shader *shader) : Mesh(shader), coeff_friction(0)
   {
     loadObj(filename);
   }
 
-  ClothMesh(const string &filename, Vec3 pos, Shader *shader) : Mesh(pos, shader)
+  ClothMesh(const string &filename, Vec3 pos) : Mesh(pos), coeff_friction(0)
   {
     loadObj(filename);
   }
 
-  ClothMesh(const string &filename, Vec3 pos, Vec3 scale) : Mesh(pos, scale)
+  ClothMesh(const string &filename, Vec3 pos, Shader *shader)
+      : Mesh(pos, shader), coeff_friction(0)
+  {
+    loadObj(filename);
+  }
+
+  ClothMesh(const string &filename, Vec3 pos, Vec3 scale) : Mesh(pos, scale), coeff_friction(0)
   {
     loadObj(filename);
   }
 
   ClothMesh(const string &filename, Vec3 pos, Vec3 scale, Shader *shader)
-      : Mesh(pos, scale, shader)
+      : Mesh(pos, scale, shader), coeff_friction(0)
   {
     loadObj(filename);
   }
 
   EigenSparseMatrix mass_matrix;     /* TODO(ish): initialize this */
   EigenSparseMatrix identity_matrix; /* TODO(ish): initialize this */
+  double coeff_friction;
 
   void add(ClothVert *vert);
   void add(ClothNode *node);
@@ -179,6 +181,11 @@ class ClothMesh : public Mesh {
   void unapplyTransformation();
 
   void updateBVH();
+
+  void setCoeffFriction(double coeff_friction)
+  {
+    this->coeff_friction = coeff_friction;
+  }
 
   ~ClothMesh()
   {

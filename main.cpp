@@ -90,6 +90,7 @@ int main()
                                   "shaders/directional_light.frag");
   Shader light_shader("shaders/light.vert", "shaders/light.frag");
   ClothMesh mesh("something.obj", Vec3(0, 0, 0), Vec3(1.0), &directional_light_shader);
+  mesh.setCoeffFriction(0.3);
   Mesh light("light.obj", glmVec3ToVec3(light_dir * glm::vec3(-2.2f)), Vec3(0.2), &light_shader);
   Simulation simulation(&mesh);
   /* Sphere ob_mesh(0.3, Vec3(0, -0.5, 0), &directional_light_shader); */

@@ -32,10 +32,11 @@ void Collision::deleteBVH()
   }
 }
 
-void Collision::calculateImpulse(ClothNode *cloth_node, Face *face, Vec3 bary_coords)
+void Collision::calculateImpulse(ClothNode *cloth_node,
+                                 Face *face,
+                                 Vec3 bary_coords,
+                                 double coeff_friction)
 {
-  /* TODO(ish): calculate the impulse with respect to friction */
-
   /* Currently, since the obstacle doesn't have a velocity term, we
    * need to consider this as Vec3(0), otherwise the actual value
    * would be
@@ -56,15 +57,17 @@ void Collision::calculateImpulse(ClothNode *cloth_node, Face *face, Vec3 bary_co
   double I = -min(collision_timestep * simulation->stiffness_stretch * d,
                   cloth_node->mass * ((0.1 * d / collision_timestep) - vn));
 
-  double coeff_friction = 1.0;
+  /* Friction */
   Vec3 v_rel_t_pre = v_rel - face->n * vn;
   Vec3 v_rel_t = max(1.0 - (coeff_friction * vn / norm(v_rel_t_pre)), 0.0) * v_rel_t_pre;
+  /* Impulse of friction with the correct direction */
+  Vec3 I_f = (v_rel_t - v_rel_t_pre) * cloth_node->mass;
 
   /* I_bar is the adjusted impulse, section 7.1 from
    * "Robust Treatment of Collisions, Contact, and Friction for Cloth
    * Animation" */
   double I_bar = 2.0 * I / (1 + norm2(bary_coords));
-  cloth_node->impulse += (face->n * I_bar) + ((v_rel_t - v_rel_t_pre) * cloth_node->mass);
+  cloth_node->impulse += (face->n * I_bar) + I_f;
   cloth_node->impulse_count++;
 }
 
@@ -114,7 +117,9 @@ bool Collision::checkProximity(ClothNode *cloth_node, Face *face, Vec3 &r_bary_c
   return true;
 }
 
-void Collision::checkProximityAndCalculateImpulse(ClothFace *cloth_face, Face *obstacle_face)
+void Collision::checkProximityAndCalculateImpulse(ClothFace *cloth_face,
+                                                  Face *obstacle_face,
+                                                  double coeff_friction)
 {
   for (int i = 0; i < 3; i++) {
     ClothNode *node = static_cast<ClothNode *>(cloth_face->v[i]->node);
@@ -123,7 +128,7 @@ void Collision::checkProximityAndCalculateImpulse(ClothFace *cloth_face, Face *o
     if (checkProximity(node, obstacle_face, bary_coords)) {
       /* Impulse will be calculated and stored in node->impulse,
        * node->impulse_count */
-      calculateImpulse(node, obstacle_face, bary_coords);
+      calculateImpulse(node, obstacle_face, bary_coords, coeff_friction);
     }
   }
 }
@@ -149,6 +154,10 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
   }
 
   setImpulseToZero(cloth_mesh);
+  /* TODO(ish): coeffient of friction should be a property of both the
+   * cloth mesh as well as the obstacle_mesh, will need to implement
+   * coefficient of friction for obstacle mesh */
+  double coeff_friction = cloth_mesh->coeff_friction;
 
   for (int i = 0; i < overlap_size; i++) {
     int cloth_mesh_index = overlap[i].indexA;
@@ -157,7 +166,7 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
     ClothFace *cloth_face = static_cast<ClothFace *>(cloth_mesh->faces[cloth_mesh_index]);
     Face *obstacle_face = obstacle_mesh->faces[obstacle_mesh_index];
 
-    checkProximityAndCalculateImpulse(cloth_face, obstacle_face);
+    checkProximityAndCalculateImpulse(cloth_face, obstacle_face, coeff_friction);
   }
   /* TEMP */
   {
