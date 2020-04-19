@@ -36,12 +36,13 @@ void Collision::calculateImpulse(ClothNode *cloth_node, Face *face, Vec3 bary_co
 {
   /* TODO(ish): calculate the impulse with respect to friction */
 
-  /* The relative normal velocity is given by
-   * dot(face->n, interp(face->v[0]->node->v, face->v[1]->node->v,
-   * face->v[2]->node->v, bary_coords)) - dot(face->n, cloth_node->v)
-   * Currently, since the obstacle doesn't have a velocity term, we
-   * need to consider this as 0 */
-  double vn = dot(cloth_node->v, face->n) - 0.0;
+  /* Currently, since the obstacle doesn't have a velocity term, we
+   * need to consider this as Vec3(0), otherwise the actual value
+   * would be
+   * Vec3 v_rel = cloth_node->v - interp(face->v[0]->node->v,
+   * face->v[1]->node->v, face->v[2]->node->v, bary_coords); */
+  Vec3 v_rel = cloth_node->v - Vec3(0);
+  double vn = dot(face->n, v_rel);
   /* If vn < 0 then the node and the face are approaching each other */
   if (vn > 0) {
     return;
