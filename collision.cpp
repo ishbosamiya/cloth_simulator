@@ -56,11 +56,15 @@ void Collision::calculateImpulse(ClothNode *cloth_node, Face *face, Vec3 bary_co
   double I = -min(collision_timestep * simulation->stiffness_stretch * d,
                   cloth_node->mass * ((0.1 * d / collision_timestep) - vn));
 
+  double coeff_friction = 1.0;
+  Vec3 v_rel_t_pre = v_rel - face->n * vn;
+  Vec3 v_rel_t = max(1.0 - (coeff_friction * vn / norm(v_rel_t_pre)), 0.0) * v_rel_t_pre;
+
   /* I_bar is the adjusted impulse, section 7.1 from
    * "Robust Treatment of Collisions, Contact, and Friction for Cloth
    * Animation" */
   double I_bar = 2.0 * I / (1 + norm2(bary_coords));
-  cloth_node->impulse += face->n * I_bar;
+  cloth_node->impulse += (face->n * I_bar) + ((v_rel_t - v_rel_t_pre) * cloth_node->mass);
   cloth_node->impulse_count++;
 }
 

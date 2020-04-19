@@ -11,3 +11,4 @@ temp/
 *.bak
 .gdb_history
 peda-session*.*
+.testing/
