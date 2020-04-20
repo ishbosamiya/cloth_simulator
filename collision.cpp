@@ -150,6 +150,10 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
   BVHTreeOverlap *overlap = BVHTree_overlap(
       cloth_mesh->bvh, obstacle_mesh->bvh, &overlap_size, NULL, NULL);
   if (overlap_size == 0) {
+    if (overlap) {
+      delete[] overlap;
+    }
+
     return;
   }
 
@@ -182,6 +186,10 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
       node->x = node->x0 + (collision_timestep * node->v);
       count++;
     }
+  }
+
+  if (overlap) {
+    delete[] overlap;
   }
 
   /* TODO(ish): now that impulse in stored in the nodes of the
