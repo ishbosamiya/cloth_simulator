@@ -11,7 +11,7 @@ endif
 
 GL_FLAGS = -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl
 LIB_FLAGS = -lfreetype
-OBJS = glad.o main.o cloth_mesh.o constraint.o simulation.o mesh.o primitives.o bvh.o aabb.o collision.o
+OBJS = glad.o main.o cloth_mesh.o constraint.o simulation.o mesh.o primitives.o bvh.o collision.o
 PROJECT_NAME = cloth_simulator
 
 ifeq (${mode}, debug)
@@ -42,8 +42,6 @@ primitives.o:
 	${CC} ${INCLUDES} ${FLAGS} -c primitives.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 bvh.o:
 	${CC} ${INCLUDES} ${FLAGS} -c bvh.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
-aabb.o:
-	${CC} ${INCLUDES} ${FLAGS} -c aabb.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 collision.o:
 	${CC} ${INCLUDES} ${FLAGS} -c collision.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 

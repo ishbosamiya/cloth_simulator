@@ -90,35 +90,6 @@ class ClothFace : public Face {
   {
     type = PRIMITIVE_FACE;
   }
-
-  bool boundingBox(AABB &r_box)
-  {
-    Vec3 min_v_x;
-    Vec3 max_v_x;
-    Vec3 min_v_x0;
-    Vec3 max_v_x0;
-
-    ClothNode *node1 = static_cast<ClothNode *>(v[0]->node);
-    ClothNode *node2 = static_cast<ClothNode *>(v[1]->node);
-    ClothNode *node3 = static_cast<ClothNode *>(v[2]->node);
-    min_v_x[0] = min(node1->x[0], node2->x[0], node3->x[0]);
-    min_v_x0[0] = min(node1->x0[0], node2->x0[0], node3->x0[0]);
-    min_v_x[1] = min(node1->x[1], node2->x[1], node3->x[1]);
-    min_v_x0[1] = min(node1->x0[1], node2->x0[1], node3->x0[1]);
-    min_v_x[2] = min(node1->x[2], node2->x[2], node3->x[2]);
-    min_v_x0[2] = min(node1->x0[2], node2->x0[2], node3->x0[2]);
-
-    max_v_x[0] = max(node1->x[0], node2->x[0], node3->x[0]);
-    max_v_x0[0] = max(node1->x0[0], node2->x0[0], node3->x0[0]);
-    max_v_x[1] = max(node1->x[1], node2->x[1], node3->x[1]);
-    max_v_x0[1] = max(node1->x0[1], node2->x0[1], node3->x0[1]);
-    max_v_x[2] = max(node1->x[2], node2->x[2], node3->x[2]);
-    max_v_x0[2] = max(node1->x0[2], node2->x0[2], node3->x0[2]);
-
-    r_box = surroundingBox(AABB(min_v_x, max_v_x), AABB(min_v_x0, max_v_x0));
-
-    return true;
-  }
 };
 
 /* Stores the overall ClothMesh data */

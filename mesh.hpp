@@ -13,7 +13,6 @@
 #include "misc.hpp"
 #include "opengl_mesh.hpp"
 #include "primitives.hpp"
-#include "aabb.hpp"
 #include "bvh.hpp"
 
 using namespace std;
@@ -111,27 +110,6 @@ class Face : public Primitive {
     v[1] = v1;
     v[2] = v2;
   }
-
-  bool boundingBox(AABB &r_box)
-  {
-    Vec3 min_v(FLT_MAX);
-    Vec3 max_v(-FLT_MAX);
-
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        if (v[i]->node->x[j] < min_v[j]) {
-          min_v[j] = v[i]->node->x[j];
-        }
-        if (v[i]->node->x[j] > max_v[j]) {
-          max_v[j] = v[i]->node->x[j];
-        }
-      }
-    }
-
-    r_box = AABB(min_v, max_v);
-
-    return true;
-  }
 };
 
 /* Stores the overall Mesh data */
@@ -227,32 +205,6 @@ class Mesh : public Primitive {
 
   virtual void applyTransformation();
   virtual void unapplyTransformation();
-
-  virtual bool boundingBox(AABB &r_box)
-  {
-    Vec3 min_v(FLT_MAX);
-    Vec3 max_v(-FLT_MAX);
-
-    const int num_nodes = nodes.size();
-
-    /* TODO(ish): add support for pos and scale, as of right now, it
-     * is assumed that a function prior has applied the
-     * transformaiton and a function later will unapply the transformation */
-    for (int i = 0; i < num_nodes; i++) {
-      for (int j = 0; j < 3; j++) {
-        if (nodes[i]->x[j] < min_v[j]) {
-          min_v[j] = nodes[i]->x[j];
-        }
-        if (nodes[i]->x[j] > max_v[j]) {
-          max_v[j] = nodes[i]->x[j];
-        }
-      }
-    }
-
-    r_box = AABB(min_v, max_v);
-
-    return true;
-  }
 
   void buildBVH();
   void updateBVH();
