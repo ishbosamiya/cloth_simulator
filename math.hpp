@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cmath>
 #include <algorithm>
+#include <utility>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -13,6 +14,8 @@
 #include <glm/glm.hpp>
 
 #define PI 3.141592653
+
+using namespace std;
 
 /* Vec defines a column vector of size n */
 template<int n, typename T = double> class Vec {
@@ -697,5 +700,22 @@ inline Vec3 normal(Vec3 a0, Vec3 b0, Vec3 c0)
 {
   return cross(b0 - a0, c0 - a0);
 }
+
+template<typename T> T sgn(const T &x)
+{
+  return x < 0 ? -1 : 1;
+}
+
+/* Solves a x^2 + b x + c == 0
+ * Returns number of valid solutions
+ * r_x is the solutions of the equation */
+int solveQuadratic(double a, double b, double c, double r_x[2]);
+
+double newtonsMethod(double a, double b, double c, double d, double x0, int init_dir);
+
+/* Solves a x^3 + b x^2 + c x + d == 0
+ * Returns number of valid solutions
+ * r_x is the solutions of the equation */
+int solveCubic(double a, double b, double c, double d, double r_x[3]);
 
 #endif
