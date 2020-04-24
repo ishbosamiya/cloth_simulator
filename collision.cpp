@@ -71,20 +71,20 @@ void Collision::calculateImpulse(ClothNode *cloth_node,
   cloth_node->impulse_count++;
 }
 
-bool Collision::checkProximity(ClothNode *cloth_node, Face *face, Vec3 &r_bary_coords)
+/* Checks proximity of x4 with face formed by x1, x2, x3 where n is
+ * the normal of the face given by the caller
+ * Returns if x4 is close enough along with the bary coords of point
+ * projected onto the face */
+bool Collision::checkProximity(
+    Vec3 &x1, Vec3 &x2, Vec3 &x3, Vec3 &x4, Vec3 &n, Vec3 &r_bary_coords)
 {
-  /* Currently supports only static obstacle mesh */
   /* Following "Robust Treatment of Collisions, Contact, and Friction
    * for Cloth Animation"'s styling */
-  Vec3 &x1 = face->v[0]->node->x;
-  Vec3 &x2 = face->v[1]->node->x;
-  Vec3 &x3 = face->v[2]->node->x;
-  Vec3 &x4 = cloth_node->x0;
   Vec3 x43 = x4 - x3;
 
   /* Point x4 should be within simulation->cloth_thickness distance from the
    * plane of the face */
-  if (fabs(dot(x43, face->n)) > simulation->cloth_thickness) {
+  if (fabs(dot(x43, n)) > simulation->cloth_thickness) {
     return false;
   }
 
@@ -115,6 +115,18 @@ bool Collision::checkProximity(ClothNode *cloth_node, Face *face, Vec3 &r_bary_c
   }
 
   return true;
+}
+
+bool Collision::checkProximity(ClothNode *cloth_node, Face *face, Vec3 &r_bary_coords)
+{
+  /* Currently supports only static obstacle mesh */
+  Vec3 &x1 = face->v[0]->node->x;
+  Vec3 &x2 = face->v[1]->node->x;
+  Vec3 &x3 = face->v[2]->node->x;
+  Vec3 &x4 = cloth_node->x0;
+  Vec3 x43 = x4 - x3;
+
+  return checkProximity(x1, x2, x3, x4, face->n, r_bary_coords);
 }
 
 void Collision::checkProximityAndCalculateImpulse(ClothFace *cloth_face,

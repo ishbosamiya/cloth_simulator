@@ -53,6 +53,7 @@ class Collision {
                         Face *face,
                         Vec3 bary_coords,
                         double coeff_friction);
+  bool checkProximity(Vec3 &x1, Vec3 &x2, Vec3 &x3, Vec3 &x4, Vec3 &n, Vec3 &r_bary_coords);
   bool checkProximity(ClothNode *cloth_node, Face *face, Vec3 &r_bary_coords);
   void checkProximityAndCalculateImpulse(ClothFace *cloth_face,
                                          Face *obstacle_face,
