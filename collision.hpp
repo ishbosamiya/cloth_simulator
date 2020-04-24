@@ -58,8 +58,9 @@ class Collision {
   void checkProximityAndCalculateImpulse(ClothFace *cloth_face,
                                          Face *obstacle_face,
                                          double coeff_friction);
-  bool collisionTestVF(ClothNode *cloth_node, Face *face, Impact &impact);
-  void findImpacts(ClothFace *cloth_face, Face *obstacle_face, vector<Impact> &impacts);
+  bool collisionTestVF(ClothNode *cloth_node, Face *face, Impact &r_impact);
+  void findImpacts(ClothFace *cloth_face, Face *obstacle_face, vector<Impact> &r_impacts);
+  vector<Impact> findIndependentImpacts(vector<Impact> impacts);
   void solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh);
 
  public:
@@ -77,7 +78,13 @@ class Impact {
   Vec3 bary_coords; /* Barycentric coordinates of the impact */
   Vec3 n;           /* Normal */
   double time;      /* Time at which impact is caused */
-  Node *nodes[4];   /* Nodes involved in the impact */
+  Node *nodes[4];   /* Nodes involved in the impact
+                     * nodes[0-2] are the nodes of the face in the VF collision
+                     * node[3] is the node of the vertex in the VF collision */
+  bool operator<(const Impact &impact)
+  {
+    return time < impact.time;
+  }
 };
 
 #endif

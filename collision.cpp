@@ -145,8 +145,12 @@ void Collision::checkProximityAndCalculateImpulse(ClothFace *cloth_face,
   }
 }
 
-bool Collision::collisionTestVF(ClothNode *cloth_node, Face *face, Impact &impact)
+bool Collision::collisionTestVF(ClothNode *cloth_node, Face *face, Impact &r_impact)
 {
+  r_impact.nodes[0] = face->v[0]->node;
+  r_impact.nodes[1] = face->v[1]->node;
+  r_impact.nodes[2] = face->v[2]->node;
+  r_impact.nodes[3] = static_cast<Node *>(cloth_node);
   /* TODO(ish): when obstacles can also move, need to switch them out
    * for x0 */
   Vec3 &x1 = face->v[0]->node->x;
@@ -173,13 +177,6 @@ bool Collision::collisionTestVF(ClothNode *cloth_node, Face *face, Impact &impac
   int num_sol = solveCubic(a, b, c, d, &t[0]);
   sort(t.begin(), t.end());
 
-  for (int i = 0; i < num_sol; i++) {
-    if (t[i] < 0 || t[i] > collision_timestep) {
-      continue;
-    }
-    cout << "collision at time: " << t[i] << " timestep: " << collision_timestep << endl;
-  }
-
   /* TODO(ish): once all the velocities are represented as actual_v *
    * timestep , t[i] will need to change to 1 instead of
    * collision_timestep */
@@ -187,29 +184,59 @@ bool Collision::collisionTestVF(ClothNode *cloth_node, Face *face, Impact &impac
     if (t[i] < 0 || t[i] > collision_timestep) {
       continue;
     }
-    impact.time = t[i];
+    r_impact.time = t[i];
     /* Get the interpolated positions for the current time */
     Vec3 nx1 = x1 + (t[i] * v1);
     Vec3 nx2 = x2 + (t[i] * v2);
     Vec3 nx3 = x3 + (t[i] * v3);
     Vec3 nx4 = x4 + (t[i] * v4);
-    impact.n = face->n;
-    Vec3 &bary_coords = impact.bary_coords;
+    r_impact.n = normalize(normal(nx1, nx2, nx3));
+    Vec3 &bary_coords = r_impact.bary_coords;
 
     /* Need to check proximity of nx4 with the rest */
+    if (checkProximity(nx1, nx2, nx3, nx4, r_impact.n, bary_coords)) {
+      return true;
+    }
   }
+  return false;
 }
 
-void Collision::findImpacts(ClothFace *cloth_face, Face *obstacle_face, vector<Impact> &impacts)
+void Collision::findImpacts(ClothFace *cloth_face, Face *obstacle_face, vector<Impact> &r_impacts)
 {
   for (int i = 0; i < 3; i++) {
     ClothNode *node = static_cast<ClothNode *>(cloth_face->v[i]->node);
     Impact impact;
 
     if (collisionTestVF(node, obstacle_face, impact)) {
-      impacts.push_back(impact);
+      r_impacts.push_back(impact);
     }
   }
+}
+
+static bool conflict(const Impact &i0, const Impact &i1)
+{
+  return is_in(i0.nodes[0], i1.nodes, 4) || is_in(i0.nodes[1], i1.nodes, 4) ||
+         is_in(i0.nodes[2], i1.nodes, 4) || is_in(i0.nodes[3], i1.nodes, 4);
+}
+
+vector<Impact> Collision::findIndependentImpacts(vector<Impact> impacts)
+{
+  sort(impacts.begin(), impacts.end());
+  vector<Impact> independent;
+  int impacts_size = impacts.size();
+  for (int i = 0; i < impacts_size; i++) {
+    const Impact &impact = impacts[i];
+    bool con = false;
+    for (int j = 0; j < independent.size(); j++) {
+      if (conflict(impact, independent[j])) {
+        con = true;
+      }
+    }
+    if (!con) {
+      independent.push_back(impact);
+    }
+  }
+  return independent;
 }
 
 static void setImpulseToZero(ClothMesh *cloth_mesh)
@@ -287,15 +314,28 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
     return;
   }
 
-  vector<Impact> impacts;
-  for (int i = 0; i < overlap_size; i++) {
-    int cloth_mesh_index = overlap[i].indexA;
-    int obstacle_mesh_index = overlap[i].indexB;
+  int max_iter = 100;
+  int iter;
+  for (iter = 0; iter <= max_iter; iter++) {
+    vector<Impact> impacts;
+    for (int i = 0; i < overlap_size; i++) {
+      int cloth_mesh_index = overlap[i].indexA;
+      int obstacle_mesh_index = overlap[i].indexB;
 
-    ClothFace *cloth_face = static_cast<ClothFace *>(cloth_mesh->faces[cloth_mesh_index]);
-    Face *obstacle_face = obstacle_mesh->faces[obstacle_mesh_index];
+      ClothFace *cloth_face = static_cast<ClothFace *>(cloth_mesh->faces[cloth_mesh_index]);
+      Face *obstacle_face = obstacle_mesh->faces[obstacle_mesh_index];
 
-    findImpacts(cloth_face, obstacle_face, impacts);
+      findImpacts(cloth_face, obstacle_face, impacts);
+    }
+    impacts = findIndependentImpacts(impacts);
+    if (impacts.empty()) {
+      /* This is a good thing, we have managed to resolve all the
+       * collisions successfully */
+      break;
+    }
+  }
+  if (iter >= max_iter) {
+    cout << "warning: collision failsafe iterations have been crossed!" << endl;
   }
 
   if (overlap) {
