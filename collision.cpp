@@ -133,6 +133,73 @@ void Collision::checkProximityAndCalculateImpulse(ClothFace *cloth_face,
   }
 }
 
+bool Collision::collisionTestVF(ClothNode *cloth_node, Face *face, Impact &impact)
+{
+  /* TODO(ish): when obstacles can also move, need to switch them out
+   * for x0 */
+  Vec3 &x1 = face->v[0]->node->x;
+  Vec3 &x2 = face->v[1]->node->x;
+  Vec3 &x3 = face->v[2]->node->x;
+  Vec3 &x4 = cloth_node->x0;
+  Vec3 v1 = Vec3(0.0);
+  Vec3 v2 = Vec3(0.0);
+  Vec3 v3 = Vec3(0.0);
+  Vec3 &v4 = cloth_node->v;
+  Vec3 x21 = x2 - x1;
+  Vec3 x31 = x3 - x1;
+  Vec3 x41 = x4 - x1;
+  Vec3 v21 = v2 - v1;
+  Vec3 v31 = v3 - v1;
+  Vec3 v41 = v4 - v1;
+
+  double a = stp(v21, v31, v41);
+  double b = stp(v21, x31, v41) + stp(v21, v31, x41);
+  double c = stp(v21, x31, x41) + stp(x21, v31, x41) + stp(x21, x31, v41);
+  double d = stp(x21, x31, x41);
+
+  array<double, 3> t;
+  int num_sol = solveCubic(a, b, c, d, &t[0]);
+  sort(t.begin(), t.end());
+
+  for (int i = 0; i < num_sol; i++) {
+    if (t[i] < 0 || t[i] > collision_timestep) {
+      continue;
+    }
+    cout << "collision at time: " << t[i] << " timestep: " << collision_timestep << endl;
+  }
+
+  /* TODO(ish): once all the velocities are represented as actual_v *
+   * timestep , t[i] will need to change to 1 instead of
+   * collision_timestep */
+  for (int i = 0; i < num_sol; i++) {
+    if (t[i] < 0 || t[i] > collision_timestep) {
+      continue;
+    }
+    impact.time = t[i];
+    /* Get the interpolated positions for the current time */
+    Vec3 nx1 = x1 + (t[i] * v1);
+    Vec3 nx2 = x2 + (t[i] * v2);
+    Vec3 nx3 = x3 + (t[i] * v3);
+    Vec3 nx4 = x4 + (t[i] * v4);
+    impact.n = face->n;
+    Vec3 &bary_coords = impact.bary_coords;
+
+    /* Need to check proximity of nx4 with the rest */
+  }
+}
+
+void Collision::findImpacts(ClothFace *cloth_face, Face *obstacle_face, vector<Impact> &impacts)
+{
+  for (int i = 0; i < 3; i++) {
+    ClothNode *node = static_cast<ClothNode *>(cloth_face->v[i]->node);
+    Impact impact;
+
+    if (collisionTestVF(node, obstacle_face, impact)) {
+      impacts.push_back(impact);
+    }
+  }
+}
+
 static void setImpulseToZero(ClothMesh *cloth_mesh)
 {
   int nodes_size = cloth_mesh->nodes.size();
@@ -152,6 +219,7 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
   if (overlap_size == 0) {
     if (overlap) {
       delete[] overlap;
+      overlap = NULL;
     }
 
     return;
@@ -186,10 +254,41 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
       node->x = node->x0 + (collision_timestep * node->v);
       count++;
     }
+    if (count > 0) {
+      cloth_mesh->updateBVH();
+    }
   }
 
   if (overlap) {
     delete[] overlap;
+    overlap = NULL;
+  }
+
+  /* Finding impact zones for Rigid Impact Zone fail safe */
+  overlap = BVHTree_overlap(cloth_mesh->bvh, obstacle_mesh->bvh, &overlap_size, NULL, NULL);
+  if (overlap_size == 0) {
+    if (overlap) {
+      delete[] overlap;
+      overlap = NULL;
+    }
+
+    return;
+  }
+
+  vector<Impact> impacts;
+  for (int i = 0; i < overlap_size; i++) {
+    int cloth_mesh_index = overlap[i].indexA;
+    int obstacle_mesh_index = overlap[i].indexB;
+
+    ClothFace *cloth_face = static_cast<ClothFace *>(cloth_mesh->faces[cloth_mesh_index]);
+    Face *obstacle_face = obstacle_mesh->faces[obstacle_mesh_index];
+
+    findImpacts(cloth_face, obstacle_face, impacts);
+  }
+
+  if (overlap) {
+    delete[] overlap;
+    overlap = NULL;
   }
 
   /* TODO(ish): now that impulse in stored in the nodes of the

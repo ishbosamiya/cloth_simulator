@@ -40,6 +40,7 @@
 using namespace std;
 
 class Simulation;
+class Impact;
 
 class Collision {
  private:
@@ -56,6 +57,8 @@ class Collision {
   void checkProximityAndCalculateImpulse(ClothFace *cloth_face,
                                          Face *obstacle_face,
                                          double coeff_friction);
+  bool collisionTestVF(ClothNode *cloth_node, Face *face, Impact &impact);
+  void findImpacts(ClothFace *cloth_face, Face *obstacle_face, vector<Impact> &impacts);
   void solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh);
 
  public:
@@ -66,6 +69,14 @@ class Collision {
   void solveCollision(bool rebuild_bvh = false);
 
   ~Collision();
+};
+
+class Impact {
+ public:
+  Vec3 bary_coords; /* Barycentric coordinates of the impact */
+  Vec3 n;           /* Normal */
+  double time;      /* Time at which impact is caused */
+  Node *nodes[4];   /* Nodes involved in the impact */
 };
 
 #endif
