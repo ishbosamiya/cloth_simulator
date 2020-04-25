@@ -239,6 +239,43 @@ vector<Impact> Collision::findIndependentImpacts(vector<Impact> impacts)
   return independent;
 }
 
+ImpactZone *Collision::findOrCreateImpactZone(Node *node, vector<ImpactZone *> &r_zones)
+{
+  int r_zones_size = r_zones.size();
+  for (int i = 0; i < r_zones_size; i++) {
+    if (is_in(node, r_zones[i]->nodes)) {
+      return r_zones[i];
+    }
+  }
+
+  ImpactZone *zone = new ImpactZone;
+  zone->nodes.push_back(node);
+  r_zones.push_back(zone);
+  return zone;
+}
+
+void Collision::addToImpactZones(vector<Impact> &impacts, vector<ImpactZone *> &r_zones)
+{
+  int r_zones_size = r_zones.size();
+  for (int i = 0; i < r_zones_size; i++) {
+    r_zones[i]->active = false;
+  }
+  int impacts_size = impacts.size();
+  for (int i = 0; i < impacts_size; i++) {
+    const Impact &impact = impacts[i];
+    Node *node = impact.nodes[3]; /* TODO(ish): currently we want to consider the vertex
+                                   * out of the VF collision check, later when obstacles are also
+                                   * deformable, things will change */
+    ImpactZone *zone = findOrCreateImpactZone(node, r_zones);
+    zone->impacts.push_back(impact);
+    zone->active = true;
+  }
+}
+
+void Collision::rigidImpactZoneResolution(ImpactZone *zone)
+{
+}
+
 static void setImpulseToZero(ClothMesh *cloth_mesh)
 {
   int nodes_size = cloth_mesh->nodes.size();
@@ -314,8 +351,9 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
     return;
   }
 
-  int max_iter = 100;
+  int max_iter = 1;
   int iter;
+  vector<ImpactZone *> zones;
   for (iter = 0; iter <= max_iter; iter++) {
     vector<Impact> impacts;
     for (int i = 0; i < overlap_size; i++) {
@@ -333,9 +371,24 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
        * collisions successfully */
       break;
     }
+    addToImpactZones(impacts, zones);
+    int zones_size = zones.size();
+    for (int i = 0; i < zones_size; i++) {
+      rigidImpactZoneResolution(zones[i]);
+    }
+    cloth_mesh->updateBVH();
+    obstacle_mesh->updateBVH();
   }
   if (iter >= max_iter) {
     cout << "warning: collision failsafe iterations have been crossed!" << endl;
+  }
+
+  int zones_size = zones.size();
+  for (int i = 0; i < zones_size; i++) {
+    if (zones[i]) {
+      delete zones[i];
+      zones[i] = NULL;
+    }
   }
 
   if (overlap) {

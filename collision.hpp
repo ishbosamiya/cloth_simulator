@@ -41,6 +41,7 @@ using namespace std;
 
 class Simulation;
 class Impact;
+class ImpactZone;
 
 class Collision {
  private:
@@ -61,6 +62,9 @@ class Collision {
   bool collisionTestVF(ClothNode *cloth_node, Face *face, Impact &r_impact);
   void findImpacts(ClothFace *cloth_face, Face *obstacle_face, vector<Impact> &r_impacts);
   vector<Impact> findIndependentImpacts(vector<Impact> impacts);
+  ImpactZone *findOrCreateImpactZone(Node *node, vector<ImpactZone *> &r_zones);
+  void addToImpactZones(vector<Impact> &impacts, vector<ImpactZone *> &r_zones);
+  void rigidImpactZoneResolution(ImpactZone *zone);
   void solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh);
 
  public:
@@ -85,6 +89,13 @@ class Impact {
   {
     return time < impact.time;
   }
+};
+
+class ImpactZone {
+ public:
+  vector<Impact> impacts;
+  vector<Node *> nodes;
+  bool active;
 };
 
 #endif
