@@ -428,7 +428,7 @@ mnT MatmnT operator-(const MatmnT &A)
 
 mnT MatmnT operator+(const MatmnT &A, const MatmnT &B)
 {
-  MatmnT &C;
+  MatmnT C;
 
   for (int i = 0; i < n; i++) {
     C.col(i) = A.col(i) + B.col(i);

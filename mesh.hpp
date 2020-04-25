@@ -67,6 +67,10 @@ class Node {
   Node(const Vec3 &x, const Vec3 &n) : x(x), n(n)
   {
   }
+
+  virtual ~Node()
+  {
+  }
 };
 
 /* Stores the Edge data */

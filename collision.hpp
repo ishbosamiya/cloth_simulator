@@ -96,6 +96,8 @@ class ImpactZone {
   vector<Impact> impacts;
   vector<Node *> nodes;
   bool active;
+
+  void merge(ImpactZone *zone, vector<ImpactZone *> &r_zones);
 };
 
 #endif

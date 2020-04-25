@@ -169,7 +169,7 @@ bool Collision::collisionTestVF(ClothNode *cloth_node, Face *face, Impact &r_imp
   Vec3 v41 = v4 - v1;
 
   double a = stp(v21, v31, v41);
-  double b = stp(v21, x31, v41) + stp(v21, v31, x41);
+  double b = stp(v21, x31, v41) + stp(v21, v31, x41) + stp(x21, v31, v41);
   double c = stp(v21, x31, x41) + stp(x21, v31, x41) + stp(x21, x31, v41);
   double d = stp(x21, x31, x41);
 
@@ -254,6 +254,18 @@ ImpactZone *Collision::findOrCreateImpactZone(Node *node, vector<ImpactZone *> &
   return zone;
 }
 
+void ImpactZone::merge(ImpactZone *zone, vector<ImpactZone *> &r_zones)
+{
+  assert(zone);
+  if (this == zone) {
+    return;
+  }
+  append(nodes, zone->nodes);
+  append(impacts, zone->impacts);
+  exclude(zone, r_zones);
+  delete zone;
+}
+
 void Collision::addToImpactZones(vector<Impact> &impacts, vector<ImpactZone *> &r_zones)
 {
   int r_zones_size = r_zones.size();
@@ -263,10 +275,11 @@ void Collision::addToImpactZones(vector<Impact> &impacts, vector<ImpactZone *> &
   int impacts_size = impacts.size();
   for (int i = 0; i < impacts_size; i++) {
     const Impact &impact = impacts[i];
-    Node *node = impact.nodes[3]; /* TODO(ish): currently we want to consider the vertex
-                                   * out of the VF collision check, later when obstacles are also
-                                   * deformable, things will change */
+    Node *node = impact.nodes[3];
     ImpactZone *zone = findOrCreateImpactZone(node, r_zones);
+    for (int j = 0; j < 4; j++) {
+      zone->merge(findOrCreateImpactZone(impact.nodes[j], r_zones), r_zones);
+    }
     zone->impacts.push_back(impact);
     zone->active = true;
   }
@@ -274,6 +287,100 @@ void Collision::addToImpactZones(vector<Impact> &impacts, vector<ImpactZone *> &
 
 void Collision::rigidImpactZoneResolution(ImpactZone *zone)
 {
+  if (!zone->active) {
+    return;
+  }
+
+  Vec3 xcm = Vec3(0.0);
+  Vec3 vcm = Vec3(0.0);
+  double total_mass = 0.0;
+
+  /* TODO(ish): this part can be simplified after obstacles can also
+   * move */
+  double obstacle_mass = 0.1;
+  int nodes_size = zone->nodes.size();
+  /* cout << "nodes_size: " << nodes_size << endl; */
+  int cloth_nodes_count = 0;
+  int obstacle_nodes_count = 0;
+  for (int i = 0; i < nodes_size; i++) {
+    ClothNode *node;
+    if (node = dynamic_cast<ClothNode *>(zone->nodes[i])) {
+      xcm += node->mass * node->x0;
+      vcm += node->mass * node->v;
+      total_mass += node->mass;
+      /* cout << "node->x0: " << node->x0 << " node->v: " << node->v << " node->mass: " <<
+       * node->mass */
+      /*      << endl; */
+      cloth_nodes_count++;
+    }
+    else {
+      xcm += obstacle_mass * zone->nodes[i]->x;
+      vcm += Vec3(0.0);
+      total_mass += obstacle_mass;
+      /* cout << "zone->nodes[i]->x: " << zone->nodes[i]->x << " obstacle_mass: " << obstacle_mass
+       */
+      /*      << endl; */
+      obstacle_nodes_count++;
+    }
+  }
+  cout << "nodes_size: " << nodes_size << " cloth_nodes_count: " << cloth_nodes_count
+       << " obstacle_nodes_count: " << obstacle_nodes_count << endl;
+  xcm /= total_mass;
+  vcm /= total_mass;
+
+  cout << "xcm: " << xcm << " vcm: " << vcm << " total_mass: " << total_mass << endl;
+
+  Vec3 L = Vec3(0.0);
+  for (int i = 0; i < nodes_size; i++) {
+    ClothNode *node;
+    if (node = dynamic_cast<ClothNode *>(zone->nodes[i])) {
+      L += node->mass * cross(node->x0 - xcm, node->v - vcm);
+    }
+    else {
+      L += obstacle_mass * cross(zone->nodes[i]->x - xcm, Vec3(0.0) - vcm);
+    }
+  }
+  /* cout << "L: " << L << endl; */
+  /* if (norm2(L) < 1e-6) { */
+  /*   return; */
+  /* } */
+
+  Mat3x3 identity = Mat3x3(1.0);
+  Mat3x3 I;
+  for (int i = 0; i < nodes_size; i++) {
+    ClothNode *node;
+    if (node = dynamic_cast<ClothNode *>(zone->nodes[i])) {
+      Vec3 x0_xcm = node->x0 - xcm;
+      I += node->mass * (norm2(x0_xcm) * identity - outer(x0_xcm, x0_xcm));
+    }
+    else {
+      Vec3 x0_xcm = zone->nodes[i]->x - xcm;
+      I += obstacle_mass * (norm2(x0_xcm) * identity - outer(x0_xcm, x0_xcm));
+    }
+  }
+  /* cout << "I: " << I << endl; */
+
+  Vec3 omega = inverse(I) * L;
+  double omega_norm = norm(omega);
+  Vec3 omega_normalized = omega / omega_norm;
+  Vec3 omega_crossed = cross(omega_normalized, omega_normalized);
+  /* cout << "omega: " << omega << " omega_norm: " << omega_norm << endl; */
+  for (int i = 0; i < nodes_size; i++) {
+    ClothNode *node;
+    if (node = dynamic_cast<ClothNode *>(zone->nodes[i])) {
+      Vec3 &x0 = node->x0;
+      Vec3 x0_xcm = x0 - xcm;
+      Vec3 xf = dot(x0_xcm, omega_normalized) * omega_normalized;
+      Vec3 xr = x0_xcm - xf;
+
+      node->x = xcm + (collision_timestep * vcm) + xf +
+                (cos(collision_timestep * omega_norm) * xr) +
+                cross(sin(collision_timestep * omega_norm) * omega_normalized, xr);
+      node->v = (node->x - node->x0) / collision_timestep;
+      /* cout << "node->x0: " << node->x0 << " node->x: " << node->x << " node->v: " << node->v */
+      /*      << endl; */
+    }
+  }
 }
 
 static void setImpulseToZero(ClothMesh *cloth_mesh)
@@ -351,7 +458,7 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
     return;
   }
 
-  int max_iter = 1;
+  int max_iter = 100;
   int iter;
   vector<ImpactZone *> zones;
   for (iter = 0; iter <= max_iter; iter++) {
