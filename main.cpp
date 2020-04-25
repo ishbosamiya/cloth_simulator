@@ -94,7 +94,7 @@ int main()
   Mesh light("light.obj", glmVec3ToVec3(light_dir * glm::vec3(-2.2f)), Vec3(0.2), &light_shader);
   Simulation simulation(&mesh);
   /* Sphere ob_mesh(0.3, Vec3(0, -0.5, 0), &directional_light_shader); */
-  Mesh ob_mesh("obstacle.obj", Vec3(0, -1.0, 0), Vec3(1.0), &directional_light_shader);
+  Mesh ob_mesh("obstacle.obj", Vec3(0, -1.2, 0), Vec3(1.0), &directional_light_shader);
   simulation.addObstacleMesh(&ob_mesh);
 
   /* Text initialization */

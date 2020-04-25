@@ -181,7 +181,7 @@ bool Collision::collisionTestVF(ClothNode *cloth_node, Face *face, Impact &r_imp
    * timestep , t[i] will need to change to 1 instead of
    * collision_timestep */
   for (int i = 0; i < num_sol; i++) {
-    if (t[i] < 0 || t[i] > collision_timestep) {
+    if (t[i] < 1e-6 || t[i] > collision_timestep) {
       continue;
     }
     r_impact.time = t[i];
@@ -323,12 +323,12 @@ void Collision::rigidImpactZoneResolution(ImpactZone *zone)
       obstacle_nodes_count++;
     }
   }
-  cout << "nodes_size: " << nodes_size << " cloth_nodes_count: " << cloth_nodes_count
-       << " obstacle_nodes_count: " << obstacle_nodes_count << endl;
+  /* cout << "nodes_size: " << nodes_size << " cloth_nodes_count: " << cloth_nodes_count */
+  /*      << " obstacle_nodes_count: " << obstacle_nodes_count << endl; */
   xcm /= total_mass;
   vcm /= total_mass;
 
-  cout << "xcm: " << xcm << " vcm: " << vcm << " total_mass: " << total_mass << endl;
+  /* cout << "xcm: " << xcm << " vcm: " << vcm << " total_mass: " << total_mass << endl; */
 
   Vec3 L = Vec3(0.0);
   for (int i = 0; i < nodes_size; i++) {
@@ -368,6 +368,8 @@ void Collision::rigidImpactZoneResolution(ImpactZone *zone)
   for (int i = 0; i < nodes_size; i++) {
     ClothNode *node;
     if (node = dynamic_cast<ClothNode *>(zone->nodes[i])) {
+      /* node->v = vcm + cross(omega, node->x0 - xcm); */
+      /* node->x = node->x0 + (collision_timestep * node->v); */
       Vec3 &x0 = node->x0;
       Vec3 x0_xcm = x0 - xcm;
       Vec3 xf = dot(x0_xcm, omega_normalized) * omega_normalized;
@@ -397,8 +399,8 @@ static void setImpulseToZero(ClothMesh *cloth_mesh)
 void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
 {
   unsigned int overlap_size = 0;
-  BVHTreeOverlap *overlap = BVHTree_overlap(
-      cloth_mesh->bvh, obstacle_mesh->bvh, &overlap_size, NULL, NULL);
+  BVHTreeOverlap *overlap;
+  overlap = BVHTree_overlap(cloth_mesh->bvh, obstacle_mesh->bvh, &overlap_size, NULL, NULL);
   if (overlap_size == 0) {
     if (overlap) {
       delete[] overlap;
