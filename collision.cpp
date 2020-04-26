@@ -35,14 +35,14 @@ void Collision::deleteBVH()
 /* Returns true if impulse has been calculated */
 bool Collision::calculateImpulse(ImpulseInfo &info, Vec3 &r_impulse)
 {
-  Vec3 v_rel = *(info.v4) - interp(*(info.v1), *(info.v2), *(info.v3), *(info.bary_coords));
+  Vec3 v_rel = *(info.v4) - interp(*(info.v1), *(info.v2), *(info.v3), info.bary_coords);
   double vn = dot(*(info.n), v_rel);
   /* If vn < 0 then the node and the face are approaching each other */
   if (vn > 0) {
     return false;
   }
   double d = simulation->cloth_thickness -
-             dot(*(info.x4) - interp(*(info.x1), *(info.x2), *(info.x3), *(info.bary_coords)),
+             dot(*(info.x4) - interp(*(info.x1), *(info.x2), *(info.x3), info.bary_coords),
                  *(info.n));
 
   double I = -min(collision_timestep * simulation->stiffness_stretch * d,
@@ -57,7 +57,7 @@ bool Collision::calculateImpulse(ImpulseInfo &info, Vec3 &r_impulse)
   /* I_bar is the adjusted impulse, section 7.1 from
    * "Robust Treatment of Collisions, Contact, and Friction for Cloth
    * Animation" */
-  double I_bar = 2.0 * I / (1 + norm2(*(info.bary_coords)));
+  double I_bar = 2.0 * I / (1 + norm2(info.bary_coords));
   r_impulse += (*(info.n) * I_bar) + I_f;
 
   return true;
@@ -81,7 +81,7 @@ void Collision::calculateImpulse(ClothNode *cloth_node,
                    &zero_vec,
                    &cloth_node->v,
                    &face->n,
-                   &bary_coords,
+                   bary_coords,
                    &coeff_friction,
                    &cloth_node->mass);
   if (calculateImpulse(info, impulse)) {

@@ -106,6 +106,7 @@ class ImpactZone {
 class ImpulseInfo {
  public:
   /* For VF collision, V is the vertex (node), F is the face */
+  /* These point to the values */
   Vec3 *x1;               /* Position of F->node at beginning of timestep */
   Vec3 *x2;               /* Position of F->node at beginning of timestep */
   Vec3 *x3;               /* Position of F->node at beginning of timestep */
@@ -115,10 +116,11 @@ class ImpulseInfo {
   Vec3 *v3;               /* Velocity of F->node at beginning of timestep */
   Vec3 *v4;               /* Velocity of V at beginning of timestep */
   Vec3 *n;                /* Normal of F */
-  Vec3 *bary_coords;      /* Barycentric coordinates calculated for F */
   double *coeff_friction; /* Coeffient of Friction */
   double *mass;           /* Mass of V, assumption is that all participating
                            * nodes have the same mass */
+
+  Vec3 bary_coords; /* Barycentric coordinates calculated for F */
 
   ImpulseInfo()
   {
@@ -132,7 +134,7 @@ class ImpulseInfo {
               Vec3 *v3,
               Vec3 *v4,
               Vec3 *n,
-              Vec3 *bary_coords,
+              Vec3 bary_coords,
               double *coeff_friction,
               double *mass)
   {
