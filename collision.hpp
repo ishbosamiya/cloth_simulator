@@ -106,35 +106,35 @@ class ImpactZone {
 class ImpulseInfo {
  public:
   /* For VF collision, V is the vertex (node), F is the face */
-  Vec3 x1;               /* Position of F->node at beginning of timestep */
-  Vec3 x2;               /* Position of F->node at beginning of timestep */
-  Vec3 x3;               /* Position of F->node at beginning of timestep */
-  Vec3 x4;               /* Position of V at beginning of timestep */
-  Vec3 v1;               /* Velocity of F->node at beginning of timestep */
-  Vec3 v2;               /* Velocity of F->node at beginning of timestep */
-  Vec3 v3;               /* Velocity of F->node at beginning of timestep */
-  Vec3 v4;               /* Velocity of V at beginning of timestep */
-  Vec3 n;                /* Normal of F */
-  Vec3 bary_coords;      /* Barycentric coordinates calculated for F */
-  double coeff_friction; /* Coeffient of Friction */
-  double mass;           /* Mass of V, assumption is that all participating
-                          * nodes have the same mass */
+  Vec3 *x1;               /* Position of F->node at beginning of timestep */
+  Vec3 *x2;               /* Position of F->node at beginning of timestep */
+  Vec3 *x3;               /* Position of F->node at beginning of timestep */
+  Vec3 *x4;               /* Position of V at beginning of timestep */
+  Vec3 *v1;               /* Velocity of F->node at beginning of timestep */
+  Vec3 *v2;               /* Velocity of F->node at beginning of timestep */
+  Vec3 *v3;               /* Velocity of F->node at beginning of timestep */
+  Vec3 *v4;               /* Velocity of V at beginning of timestep */
+  Vec3 *n;                /* Normal of F */
+  Vec3 *bary_coords;      /* Barycentric coordinates calculated for F */
+  double *coeff_friction; /* Coeffient of Friction */
+  double *mass;           /* Mass of V, assumption is that all participating
+                           * nodes have the same mass */
 
   ImpulseInfo()
   {
   }
-  ImpulseInfo(Vec3 x1,
-              Vec3 x2,
-              Vec3 x3,
-              Vec3 x4,
-              Vec3 v1,
-              Vec3 v2,
-              Vec3 v3,
-              Vec3 v4,
-              Vec3 n,
-              Vec3 bary_coords,
-              double coeff_friction,
-              double mass)
+  ImpulseInfo(Vec3 *x1,
+              Vec3 *x2,
+              Vec3 *x3,
+              Vec3 *x4,
+              Vec3 *v1,
+              Vec3 *v2,
+              Vec3 *v3,
+              Vec3 *v4,
+              Vec3 *n,
+              Vec3 *bary_coords,
+              double *coeff_friction,
+              double *mass)
   {
     this->x1 = x1;
     this->x2 = x2;

@@ -35,29 +35,30 @@ void Collision::deleteBVH()
 /* Returns true if impulse has been calculated */
 bool Collision::calculateImpulse(ImpulseInfo &info, Vec3 &r_impulse)
 {
-  Vec3 v_rel = info.v4 - interp(info.v1, info.v2, info.v3, info.bary_coords);
-  double vn = dot(info.n, v_rel);
+  Vec3 v_rel = *(info.v4) - interp(*(info.v1), *(info.v2), *(info.v3), *(info.bary_coords));
+  double vn = dot(*(info.n), v_rel);
   /* If vn < 0 then the node and the face are approaching each other */
   if (vn > 0) {
     return false;
   }
   double d = simulation->cloth_thickness -
-             dot(info.x4 - interp(info.x1, info.x2, info.x3, info.bary_coords), info.n);
+             dot(*(info.x4) - interp(*(info.x1), *(info.x2), *(info.x3), *(info.bary_coords)),
+                 *(info.n));
 
   double I = -min(collision_timestep * simulation->stiffness_stretch * d,
-                  info.mass * ((0.1 * d / collision_timestep) - vn));
+                  *(info.mass) * ((0.1 * d / collision_timestep) - vn));
 
   /* Friction */
-  Vec3 v_rel_t_pre = v_rel - info.n * vn;
-  Vec3 v_rel_t = max(1.0 - (info.coeff_friction * vn / norm(v_rel_t_pre)), 0.0) * v_rel_t_pre;
+  Vec3 v_rel_t_pre = v_rel - *(info.n) * vn;
+  Vec3 v_rel_t = max(1.0 - (*(info.coeff_friction) * vn / norm(v_rel_t_pre)), 0.0) * v_rel_t_pre;
   /* Impulse of friction with the correct direction */
-  Vec3 I_f = (v_rel_t - v_rel_t_pre) * info.mass;
+  Vec3 I_f = (v_rel_t - v_rel_t_pre) * *(info.mass);
 
   /* I_bar is the adjusted impulse, section 7.1 from
    * "Robust Treatment of Collisions, Contact, and Friction for Cloth
    * Animation" */
-  double I_bar = 2.0 * I / (1 + norm2(info.bary_coords));
-  r_impulse += (info.n * I_bar) + I_f;
+  double I_bar = 2.0 * I / (1 + norm2(*(info.bary_coords)));
+  r_impulse += (*(info.n) * I_bar) + I_f;
 
   return true;
 }
@@ -69,19 +70,20 @@ void Collision::calculateImpulse(ClothNode *cloth_node,
 {
   /* Currently, since the obstacle doesn't have a velocity term, we
    * need to consider this as Vec3(0) */
+  Vec3 zero_vec = Vec3(0.0);
   Vec3 impulse;
-  ImpulseInfo info(face->v[0]->node->x,
-                   face->v[1]->node->x,
-                   face->v[2]->node->x,
-                   cloth_node->x0,
-                   Vec3(0),
-                   Vec3(0),
-                   Vec3(0),
-                   cloth_node->v,
-                   face->n,
-                   bary_coords,
-                   coeff_friction,
-                   cloth_node->mass);
+  ImpulseInfo info(&face->v[0]->node->x,
+                   &face->v[1]->node->x,
+                   &face->v[2]->node->x,
+                   &cloth_node->x0,
+                   &zero_vec,
+                   &zero_vec,
+                   &zero_vec,
+                   &cloth_node->v,
+                   &face->n,
+                   &bary_coords,
+                   &coeff_friction,
+                   &cloth_node->mass);
   if (calculateImpulse(info, impulse)) {
     cloth_node->impulse += impulse;
     cloth_node->impulse_count++;
