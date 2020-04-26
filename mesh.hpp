@@ -210,7 +210,7 @@ class Mesh : public Primitive {
   virtual void applyTransformation();
   virtual void unapplyTransformation();
 
-  void buildBVH();
+  void buildBVH(float epsilon = 0.01);
   void updateBVH();
   void deleteBVH();
   void drawBVH(glm::mat4 &projection, glm::mat4 &view)

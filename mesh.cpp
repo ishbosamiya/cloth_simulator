@@ -359,10 +359,9 @@ void Mesh::unapplyTransformation()
   }
 }
 
-void Mesh::buildBVH()
+void Mesh::buildBVH(float epsilon)
 {
   assert(bvh == NULL);
-  float epsilon = 0.01;
   int faces_size = faces.size();
   bvh = BVHTree_new(faces_size, epsilon, 4, 26);
 

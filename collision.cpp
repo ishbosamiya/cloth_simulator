@@ -16,10 +16,10 @@ Collision::~Collision()
 
 void Collision::buildBVH()
 {
-  simulation->mesh->buildBVH();
+  simulation->mesh->buildBVH(simulation->cloth_thickness);
   int obstacle_meshes_size = simulation->obstacle_meshes.size();
   for (int i = 0; i < obstacle_meshes_size; i++) {
-    simulation->obstacle_meshes[i]->buildBVH();
+    simulation->obstacle_meshes[i]->buildBVH(simulation->cloth_thickness);
   }
 }
 
