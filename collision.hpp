@@ -30,6 +30,7 @@
 
 #include <iostream>
 #include <vector>
+#include <limits>
 
 #include "simulation.hpp"
 #include "bvh.hpp"

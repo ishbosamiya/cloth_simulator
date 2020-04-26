@@ -181,7 +181,7 @@ bool Collision::collisionTestVF(ClothNode *cloth_node, Face *face, Impact &r_imp
    * timestep , t[i] will need to change to 1 instead of
    * collision_timestep */
   for (int i = 0; i < num_sol; i++) {
-    if (t[i] < 1e-6 || t[i] > collision_timestep) {
+    if (t[i] < numeric_limits<double>::epsilon() || t[i] > collision_timestep) {
       continue;
     }
     r_impact.time = t[i];
@@ -399,14 +399,9 @@ static void setImpulseToZero(ClothMesh *cloth_mesh)
 void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
 {
   unsigned int overlap_size = 0;
-  BVHTreeOverlap *overlap;
+  BVHTreeOverlap *overlap = NULL;
   overlap = BVHTree_overlap(cloth_mesh->bvh, obstacle_mesh->bvh, &overlap_size, NULL, NULL);
-  if (overlap_size == 0) {
-    if (overlap) {
-      delete[] overlap;
-      overlap = NULL;
-    }
-
+  if (!overlap) {
     return;
   }
 
@@ -450,21 +445,17 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
   }
 
   /* Finding impact zones for Rigid Impact Zone fail safe */
-  overlap = BVHTree_overlap(cloth_mesh->bvh, obstacle_mesh->bvh, &overlap_size, NULL, NULL);
-  if (overlap_size == 0) {
-    if (overlap) {
-      delete[] overlap;
-      overlap = NULL;
-    }
 
-    return;
-  }
-
-  int max_iter = 100;
+  int max_iter = 1000;
   int iter;
   vector<ImpactZone *> zones;
   for (iter = 0; iter <= max_iter; iter++) {
     vector<Impact> impacts;
+    overlap_size = 0;
+    overlap = BVHTree_overlap(cloth_mesh->bvh, obstacle_mesh->bvh, &overlap_size, NULL, NULL);
+    if (!overlap) {
+      break;
+    }
     for (int i = 0; i < overlap_size; i++) {
       int cloth_mesh_index = overlap[i].indexA;
       int obstacle_mesh_index = overlap[i].indexB;
