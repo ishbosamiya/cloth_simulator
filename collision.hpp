@@ -43,6 +43,7 @@ using namespace std;
 class Simulation;
 class Impact;
 class ImpactZone;
+class ImpulseInfo;
 
 class Collision {
  private:
@@ -51,6 +52,7 @@ class Collision {
   void buildBVH();
   void deleteBVH();
 
+  bool calculateImpulse(ImpulseInfo &info, Vec3 &r_impulse);
   void calculateImpulse(ClothNode *cloth_node,
                         Face *face,
                         Vec3 bary_coords,
@@ -99,6 +101,54 @@ class ImpactZone {
   bool active;
 
   void merge(ImpactZone *zone, vector<ImpactZone *> &r_zones);
+};
+
+class ImpulseInfo {
+ public:
+  /* For VF collision, V is the vertex (node), F is the face */
+  Vec3 x1;               /* Position of F->node at beginning of timestep */
+  Vec3 x2;               /* Position of F->node at beginning of timestep */
+  Vec3 x3;               /* Position of F->node at beginning of timestep */
+  Vec3 x4;               /* Position of V at beginning of timestep */
+  Vec3 v1;               /* Velocity of F->node at beginning of timestep */
+  Vec3 v2;               /* Velocity of F->node at beginning of timestep */
+  Vec3 v3;               /* Velocity of F->node at beginning of timestep */
+  Vec3 v4;               /* Velocity of V at beginning of timestep */
+  Vec3 n;                /* Normal of F */
+  Vec3 bary_coords;      /* Barycentric coordinates calculated for F */
+  double coeff_friction; /* Coeffient of Friction */
+  double mass;           /* Mass of V, assumption is that all participating
+                          * nodes have the same mass */
+
+  ImpulseInfo()
+  {
+  }
+  ImpulseInfo(Vec3 x1,
+              Vec3 x2,
+              Vec3 x3,
+              Vec3 x4,
+              Vec3 v1,
+              Vec3 v2,
+              Vec3 v3,
+              Vec3 v4,
+              Vec3 n,
+              Vec3 bary_coords,
+              double coeff_friction,
+              double mass)
+  {
+    this->x1 = x1;
+    this->x2 = x2;
+    this->x3 = x3;
+    this->x4 = x4;
+    this->v1 = v1;
+    this->v2 = v2;
+    this->v3 = v3;
+    this->v4 = v4;
+    this->n = n;
+    this->bary_coords = bary_coords;
+    this->coeff_friction = coeff_friction;
+    this->mass = mass;
+  }
 };
 
 #endif
