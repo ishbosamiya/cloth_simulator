@@ -181,7 +181,8 @@ bool Collision::collisionTestVF(ClothNode *cloth_node, Face *face, Impact &r_imp
    * timestep , t[i] will need to change to 1 instead of
    * collision_timestep */
   for (int i = 0; i < num_sol; i++) {
-    if (t[i] < numeric_limits<double>::epsilon() || t[i] > collision_timestep) {
+    if (t[i] < numeric_limits<double>::epsilon() ||
+        t[i] > collision_timestep + numeric_limits<double>::epsilon()) {
       continue;
     }
     r_impact.time = t[i];
