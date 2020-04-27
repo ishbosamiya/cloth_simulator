@@ -272,7 +272,7 @@ bool Collision::collisionTestVF(ClothNode *cloth_node, Face *face, Impact &r_imp
 
   array<double, 3> t;
   int num_sol = solveCubic(a, b, c, d, &t[0]);
-  sort(t.begin(), t.end());
+  sort(t.begin(), t.begin() + num_sol);
 
   /* TODO(ish): once all the velocities are represented as actual_v *
    * timestep , t[i] will need to change to 1 instead of
@@ -549,7 +549,7 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
   }
 
   /* Finding impact zones for Rigid Impact Zone fail safe */
-  int max_iter = 0;
+  int max_iter = 1;
   int iter;
   vector<ImpactZone *> zones;
   for (iter = 1; iter <= max_iter; iter++) {
