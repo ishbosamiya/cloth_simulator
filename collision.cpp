@@ -552,7 +552,7 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
   int max_iter = 0;
   int iter;
   vector<ImpactZone *> zones;
-  for (iter = 0; iter <= max_iter; iter++) {
+  for (iter = 1; iter <= max_iter; iter++) {
     vector<Impact> impacts;
     overlap_size = 0;
     overlap = BVHTree_overlap(cloth_mesh->bvh, obstacle_mesh->bvh, &overlap_size, NULL, NULL);
