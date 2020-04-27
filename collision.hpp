@@ -56,8 +56,14 @@ class Collision {
   bool checkProximity(ImpulseInfo &info);
   void checkProximityAndCalculateImpulse(ClothNode *cloth_node, Face *face, double coeff_friction);
   void checkProximityAndCalculateImpulse(Node *node, ClothFace *cloth_face, double coeff_friction);
+  void checkProximityAndCalculateImpulse(ClothNode *cloth_node,
+                                         ClothFace *cloth_face,
+                                         double coeff_friction);
   void checkProximityAndCalculateImpulse(ClothFace *cloth_face,
                                          Face *obstacle_face,
+                                         double coeff_friction);
+  void checkProximityAndCalculateImpulse(ClothFace *cloth_face_0,
+                                         ClothFace *cloth_face_1,
                                          double coeff_friction);
   bool collisionTestVF(ClothNode *cloth_node, Face *face, Impact &r_impact);
   void findImpacts(ClothFace *cloth_face, Face *obstacle_face, vector<Impact> &r_impacts);
@@ -65,6 +71,7 @@ class Collision {
   ImpactZone *findOrCreateImpactZone(Node *node, vector<ImpactZone *> &r_zones);
   void addToImpactZones(vector<Impact> &impacts, vector<ImpactZone *> &r_zones);
   void rigidImpactZoneResolution(ImpactZone *zone);
+  void solveSelfCollision(ClothMesh *cloth_mesh);
   void solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh);
 
  public:
