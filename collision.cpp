@@ -63,33 +63,6 @@ bool Collision::calculateImpulse(ImpulseInfo &info, Vec3 &r_impulse)
   return true;
 }
 
-void Collision::calculateImpulse(ClothNode *cloth_node,
-                                 Face *face,
-                                 Vec3 bary_coords,
-                                 double coeff_friction)
-{
-  /* Currently, since the obstacle doesn't have a velocity term, we
-   * need to consider this as Vec3(0) */
-  Vec3 zero_vec = Vec3(0.0);
-  Vec3 impulse;
-  ImpulseInfo info(&face->v[0]->node->x,
-                   &face->v[1]->node->x,
-                   &face->v[2]->node->x,
-                   &cloth_node->x0,
-                   &zero_vec,
-                   &zero_vec,
-                   &zero_vec,
-                   &cloth_node->v,
-                   &face->n,
-                   &coeff_friction,
-                   &cloth_node->mass,
-                   bary_coords);
-  if (calculateImpulse(info, impulse)) {
-    cloth_node->impulse += impulse;
-    cloth_node->impulse_count++;
-  }
-}
-
 /* Checks proximity of x4 with face formed by x1, x2, x3 where n is
  * the normal of the face given by the caller
  * Returns true if x4 is close enough along with the bary coords of point
@@ -136,45 +109,34 @@ bool Collision::checkProximity(ImpulseInfo &info)
   return true;
 }
 
-bool Collision::checkProximity(ClothNode *cloth_node, Face *face, Vec3 &r_bary_coords)
+bool Collision::checkProximityAndCalculateImpulse(ClothNode *cloth_node,
+                                                  Face *face,
+                                                  double coeff_friction)
 {
-  /* Currently supports only static obstacle mesh */
-  Vec3 impulse;
-  ImpulseInfo info(
-      &face->v[0]->node->x, &face->v[1]->node->x, &face->v[2]->node->x, &cloth_node->x0, &face->n);
+  /* Currently, since the obstacle doesn't have a velocity term, we
+   * need to consider this as Vec3(0) */
+  Vec3 zero_vec = Vec3(0.0);
+  ImpulseInfo info(&face->v[0]->node->x,
+                   &face->v[1]->node->x,
+                   &face->v[2]->node->x,
+                   &cloth_node->x0,
+                   &zero_vec,
+                   &zero_vec,
+                   &zero_vec,
+                   &cloth_node->v,
+                   &face->n,
+                   &coeff_friction,
+                   &cloth_node->mass,
+                   Vec3(0.0));
+
   if (checkProximity(info)) {
-    r_bary_coords = info.bary_coords;
-    return true;
+    Vec3 impulse;
+    if (calculateImpulse(info, impulse)) {
+      cloth_node->impulse += impulse;
+      cloth_node->impulse_count++;
+    }
   }
-  return false;
 }
-
-/* bool Collision::checkProximityAndCalculateImpulse(ClothNode *cloth_node,
-/*                                                   Face *face, */
-/*                                                   double coeff_friction) */
-/* { */
-/*   /\* Currently, since the obstacle doesn't have a velocity term, we */
-/*    * need to consider this as Vec3(0) *\/ */
-/*   Vec3 zero_vec = Vec3(0.0); */
-/*   Vec3 impulse; */
-/*   ImpulseInfo info(&face->v[0]->node->x, */
-/*                    &face->v[1]->node->x, */
-/*                    &face->v[2]->node->x, */
-/*                    &cloth_node->x0, */
-/*                    &zero_vec, */
-/*                    &zero_vec, */
-/*                    &zero_vec, */
-/*                    &cloth_node->v, */
-/*                    &face->n, */
-/*                    &coeff_friction, */
-/*                    &cloth_node->mass, */
-/*                    Vec3(0.0)); */
-
-/*   if (calculateImpulse(info, impulse)) { */
-/*     cloth_node->impulse += impulse; */
-/*     cloth_node->impulse_count++; */
-/*   } */
-/* } */
 
 void Collision::checkProximityAndCalculateImpulse(ClothFace *cloth_face,
                                                   Face *obstacle_face,
@@ -183,12 +145,7 @@ void Collision::checkProximityAndCalculateImpulse(ClothFace *cloth_face,
   for (int i = 0; i < 3; i++) {
     ClothNode *node = static_cast<ClothNode *>(cloth_face->v[i]->node);
 
-    Vec3 bary_coords;
-    if (checkProximity(node, obstacle_face, bary_coords)) {
-      /* Impulse will be calculated and stored in node->impulse,
-       * node->impulse_count */
-      calculateImpulse(node, obstacle_face, bary_coords, coeff_friction);
-    }
+    checkProximityAndCalculateImpulse(node, obstacle_face, coeff_friction);
   }
 }
 

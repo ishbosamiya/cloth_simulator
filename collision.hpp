@@ -53,12 +53,8 @@ class Collision {
   void deleteBVH();
 
   bool calculateImpulse(ImpulseInfo &info, Vec3 &r_impulse);
-  void calculateImpulse(ClothNode *cloth_node,
-                        Face *face,
-                        Vec3 bary_coords,
-                        double coeff_friction);
   bool checkProximity(ImpulseInfo &info);
-  bool checkProximity(ClothNode *cloth_node, Face *face, Vec3 &r_bary_coords);
+  bool checkProximityAndCalculateImpulse(ClothNode *cloth_node, Face *face, double coeff_friction);
   void checkProximityAndCalculateImpulse(ClothFace *cloth_face,
                                          Face *obstacle_face,
                                          double coeff_friction);
