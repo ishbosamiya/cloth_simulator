@@ -471,7 +471,8 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
 
     checkProximityAndCalculateImpulse(cloth_face, obstacle_face, coeff_friction);
   }
-  /* TEMP */
+  /* Applying impulse to the velocity and calculating the new
+   * position of the node */
   {
     int num_nodes = cloth_mesh->nodes.size();
     int count = 0;
@@ -546,9 +547,6 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
     overlap = NULL;
   }
 
-  /* TODO(ish): now that impulse in stored in the nodes of the
-   * cloth_mesh, we must apply impulse to get node->tv, which is then
-   * used for RIZ, etc. */
   /* TODO(ish): Later on when the obstacle mesh is also affected by the
    * cloth/during self collision, the barycoords need to be carried
    * over to this part as well */

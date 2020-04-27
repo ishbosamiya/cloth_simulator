@@ -44,8 +44,6 @@ class ClothNode : public Node {
  public:
   Vec3 x0;           /* previous world space position of node */
   Vec3 v;            /* world space velocity of node */
-  Vec3 tv;           /* temporary velocity, used during collision. When finding
-                      * the intermediate velocity after proximity resolution */
   int impulse_count; /* impulse count for averaging the impulse */
   Vec3 impulse;      /* impulse with the direction for averaging
                       * the impulse */
