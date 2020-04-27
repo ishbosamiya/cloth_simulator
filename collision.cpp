@@ -81,9 +81,9 @@ void Collision::calculateImpulse(ClothNode *cloth_node,
                    &zero_vec,
                    &cloth_node->v,
                    &face->n,
-                   bary_coords,
                    &coeff_friction,
-                   &cloth_node->mass);
+                   &cloth_node->mass,
+                   bary_coords);
   if (calculateImpulse(info, impulse)) {
     cloth_node->impulse += impulse;
     cloth_node->impulse_count++;
@@ -92,23 +92,22 @@ void Collision::calculateImpulse(ClothNode *cloth_node,
 
 /* Checks proximity of x4 with face formed by x1, x2, x3 where n is
  * the normal of the face given by the caller
- * Returns if x4 is close enough along with the bary coords of point
- * projected onto the face */
-bool Collision::checkProximity(
-    Vec3 &x1, Vec3 &x2, Vec3 &x3, Vec3 &x4, Vec3 &n, Vec3 &r_bary_coords)
+ * Returns true if x4 is close enough along with the bary coords of point
+ * projected onto the face, stored in info itself */
+bool Collision::checkProximity(ImpulseInfo &info)
 {
   /* Following "Robust Treatment of Collisions, Contact, and Friction
    * for Cloth Animation"'s styling */
-  Vec3 x43 = x4 - x3;
+  Vec3 x43 = *(info.x4) - *(info.x3);
 
   /* Point x4 should be within simulation->cloth_thickness distance from the
    * plane of the face */
-  if (fabs(dot(x43, n)) > simulation->cloth_thickness) {
+  if (fabs(dot(x43, *(info.n))) > simulation->cloth_thickness) {
     return false;
   }
 
-  Vec3 x13 = x1 - x3;
-  Vec3 x23 = x2 - x3;
+  Vec3 x13 = *(info.x1) - *(info.x3);
+  Vec3 x23 = *(info.x2) - *(info.x3);
 
   EigenMat2 mat;
   mat << dot(x13, x13), dot(x13, x23), dot(x13, x23), dot(x23, x23);
@@ -118,17 +117,18 @@ bool Collision::checkProximity(
 
   /* Characteristic length of triangle is square root of the area of
    * the triangle */
-  double delta = simulation->cloth_thickness / sqrt(0.5 * norm((normal(x1, x2, x3))));
-  r_bary_coords[0] = w[0];
-  r_bary_coords[1] = w[1];
-  r_bary_coords[2] = 1.0 - (w[0] + w[1]);
+  double delta = simulation->cloth_thickness /
+                 sqrt(0.5 * norm((normal(*(info.x1), *(info.x2), *(info.x3)))));
+  info.bary_coords[0] = w[0];
+  info.bary_coords[1] = w[1];
+  info.bary_coords[2] = 1.0 - (w[0] + w[1]);
 
   /* barycentric coordinates must be within [-delta, 1 + delta] */
   for (int i = 0; i < 3; i++) {
-    if (r_bary_coords[i] < -delta) {
+    if (info.bary_coords[i] < -delta) {
       return false;
     }
-    if (r_bary_coords[i] > 1 + delta) {
+    if (info.bary_coords[i] > 1 + delta) {
       return false;
     }
   }
@@ -139,14 +139,54 @@ bool Collision::checkProximity(
 bool Collision::checkProximity(ClothNode *cloth_node, Face *face, Vec3 &r_bary_coords)
 {
   /* Currently supports only static obstacle mesh */
-  Vec3 &x1 = face->v[0]->node->x;
-  Vec3 &x2 = face->v[1]->node->x;
-  Vec3 &x3 = face->v[2]->node->x;
-  Vec3 &x4 = cloth_node->x0;
-  Vec3 x43 = x4 - x3;
-
-  return checkProximity(x1, x2, x3, x4, face->n, r_bary_coords);
+  Vec3 zero_vec = Vec3(0.0);
+  double coeff_friction = 0.0;
+  Vec3 impulse;
+  ImpulseInfo info(&face->v[0]->node->x,
+                   &face->v[1]->node->x,
+                   &face->v[2]->node->x,
+                   &cloth_node->x0,
+                   &zero_vec,
+                   &zero_vec,
+                   &zero_vec,
+                   &cloth_node->v,
+                   &face->n,
+                   &coeff_friction,
+                   &cloth_node->mass,
+                   Vec3(0.0));
+  if (checkProximity(info)) {
+    r_bary_coords = info.bary_coords;
+    return true;
+  }
+  return false;
 }
+
+/* bool Collision::checkProximityAndCalculateImpulse(ClothNode *cloth_node,
+/*                                                   Face *face, */
+/*                                                   double coeff_friction) */
+/* { */
+/*   /\* Currently, since the obstacle doesn't have a velocity term, we */
+/*    * need to consider this as Vec3(0) *\/ */
+/*   Vec3 zero_vec = Vec3(0.0); */
+/*   Vec3 impulse; */
+/*   ImpulseInfo info(&face->v[0]->node->x, */
+/*                    &face->v[1]->node->x, */
+/*                    &face->v[2]->node->x, */
+/*                    &cloth_node->x0, */
+/*                    &zero_vec, */
+/*                    &zero_vec, */
+/*                    &zero_vec, */
+/*                    &cloth_node->v, */
+/*                    &face->n, */
+/*                    &coeff_friction, */
+/*                    &cloth_node->mass, */
+/*                    Vec3(0.0)); */
+
+/*   if (calculateImpulse(info, impulse)) { */
+/*     cloth_node->impulse += impulse; */
+/*     cloth_node->impulse_count++; */
+/*   } */
+/* } */
 
 void Collision::checkProximityAndCalculateImpulse(ClothFace *cloth_face,
                                                   Face *obstacle_face,
@@ -214,7 +254,23 @@ bool Collision::collisionTestVF(ClothNode *cloth_node, Face *face, Impact &r_imp
     Vec3 &bary_coords = r_impact.bary_coords;
 
     /* Need to check proximity of nx4 with the rest */
-    if (checkProximity(nx1, nx2, nx3, nx4, r_impact.n, bary_coords)) {
+    Vec3 zero_vec = Vec3(0.0);
+    double coeff_friction = 0.0d;
+    Vec3 impulse;
+    ImpulseInfo info(&nx1,
+                     &nx2,
+                     &nx3,
+                     &nx4,
+                     &zero_vec,
+                     &zero_vec,
+                     &zero_vec,
+                     &v4,
+                     &r_impact.n,
+                     &coeff_friction,
+                     &cloth_node->mass,
+                     Vec3(0.0));
+    if (checkProximity(info)) {
+      bary_coords = info.bary_coords;
       return true;
     }
   }

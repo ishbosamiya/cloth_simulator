@@ -57,7 +57,7 @@ class Collision {
                         Face *face,
                         Vec3 bary_coords,
                         double coeff_friction);
-  bool checkProximity(Vec3 &x1, Vec3 &x2, Vec3 &x3, Vec3 &x4, Vec3 &n, Vec3 &r_bary_coords);
+  bool checkProximity(ImpulseInfo &info);
   bool checkProximity(ClothNode *cloth_node, Face *face, Vec3 &r_bary_coords);
   void checkProximityAndCalculateImpulse(ClothFace *cloth_face,
                                          Face *obstacle_face,
@@ -134,9 +134,9 @@ class ImpulseInfo {
               Vec3 *v3,
               Vec3 *v4,
               Vec3 *n,
-              Vec3 bary_coords,
               double *coeff_friction,
-              double *mass)
+              double *mass,
+              Vec3 bary_coords)
   {
     this->x1 = x1;
     this->x2 = x2;
@@ -147,9 +147,9 @@ class ImpulseInfo {
     this->v3 = v3;
     this->v4 = v4;
     this->n = n;
-    this->bary_coords = bary_coords;
     this->coeff_friction = coeff_friction;
     this->mass = mass;
+    this->bary_coords = bary_coords;
   }
 };
 
