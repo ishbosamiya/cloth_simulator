@@ -275,3 +275,16 @@ void ClothMesh::updateBVH()
 
   BVHTree_update_tree(bvh);
 }
+
+void ClothMesh::updateFaceNormals()
+{
+  int faces_size = faces.size();
+
+  for (int i = 0; i < faces_size; i++) {
+    Vec3 &x0 = static_cast<ClothNode *>(faces[i]->v[0]->node)->x0;
+    Vec3 &x1 = static_cast<ClothNode *>(faces[i]->v[1]->node)->x0;
+    Vec3 &x2 = static_cast<ClothNode *>(faces[i]->v[2]->node)->x0;
+
+    faces[i]->n = normalize(normal(x0, x1, x2));
+  }
+}

@@ -158,6 +158,8 @@ class ClothMesh : public Mesh {
     this->coeff_friction = coeff_friction;
   }
 
+  void updateFaceNormals();
+
   ~ClothMesh()
   {
   }

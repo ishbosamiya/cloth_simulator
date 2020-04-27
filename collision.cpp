@@ -109,7 +109,7 @@ bool Collision::checkProximity(ImpulseInfo &info)
   return true;
 }
 
-bool Collision::checkProximityAndCalculateImpulse(ClothNode *cloth_node,
+void Collision::checkProximityAndCalculateImpulse(ClothNode *cloth_node,
                                                   Face *face,
                                                   double coeff_friction)
 {
@@ -138,6 +138,42 @@ bool Collision::checkProximityAndCalculateImpulse(ClothNode *cloth_node,
   }
 }
 
+void Collision::checkProximityAndCalculateImpulse(Node *node,
+                                                  ClothFace *cloth_face,
+                                                  double coeff_friction)
+{
+  /* Currently, since the obstacle doesn't have a velocity term, we
+   * need to consider this as Vec3(0) */
+  ClothNode *node_0 = static_cast<ClothNode *>(cloth_face->v[0]->node);
+  ClothNode *node_1 = static_cast<ClothNode *>(cloth_face->v[1]->node);
+  ClothNode *node_2 = static_cast<ClothNode *>(cloth_face->v[2]->node);
+  Vec3 zero_vec = Vec3(0.0);
+  ImpulseInfo info(&node_0->x0,
+                   &node_1->x0,
+                   &node_2->x0,
+                   &node->x,
+                   &node_0->v,
+                   &node_1->v,
+                   &node_2->v,
+                   &zero_vec,
+                   &cloth_face->n,
+                   &coeff_friction,
+                   &node_0->mass,
+                   Vec3(0.0));
+
+  if (checkProximity(info)) {
+    Vec3 impulse;
+    if (calculateImpulse(info, impulse)) {
+      node_0->impulse += (info.bary_coords[0] * impulse);
+      node_0->impulse_count++;
+      node_1->impulse += (info.bary_coords[1] * impulse);
+      node_1->impulse_count++;
+      node_2->impulse += (info.bary_coords[2] * impulse);
+      node_2->impulse_count++;
+    }
+  }
+}
+
 void Collision::checkProximityAndCalculateImpulse(ClothFace *cloth_face,
                                                   Face *obstacle_face,
                                                   double coeff_friction)
@@ -146,6 +182,11 @@ void Collision::checkProximityAndCalculateImpulse(ClothFace *cloth_face,
     ClothNode *node = static_cast<ClothNode *>(cloth_face->v[i]->node);
 
     checkProximityAndCalculateImpulse(node, obstacle_face, coeff_friction);
+  }
+  for (int i = 0; i < 3; i++) {
+    Node *node = obstacle_face->v[i]->node;
+
+    checkProximityAndCalculateImpulse(node, cloth_face, coeff_friction);
   }
 }
 
@@ -520,11 +561,12 @@ void Collision::solveCollision(bool rebuild_bvh)
     buildBVH();
   }
 
-  /* TODO(ish): add collision steps, rigid impact zones */
+  /* TODO(ish): add collision steps */
   /* TODO(ish): self collisions */
   /* TODO(ish): add support for moving obstacle_meshes */
   ClothMesh *cloth_mesh = simulation->mesh;
-  /* Need to update BVH */
+  /* Need to update BVH, when cloth_mesh is modified, it is upto the
+   * function that modified it to update the BVH at the right time */
   cloth_mesh->updateBVH();
   vector<Mesh *> &obstacle_meshes = simulation->obstacle_meshes;
   int obstacle_meshes_size = obstacle_meshes.size();
@@ -533,6 +575,7 @@ void Collision::solveCollision(bool rebuild_bvh)
     /* Need to update BVH */
     obstacle_mesh->updateBVH();
     obstacle_mesh->updateFaceNormals();
+    cloth_mesh->updateFaceNormals();
 
     solveCollision(cloth_mesh, obstacle_mesh);
   }

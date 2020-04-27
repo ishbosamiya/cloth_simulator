@@ -54,7 +54,8 @@ class Collision {
 
   bool calculateImpulse(ImpulseInfo &info, Vec3 &r_impulse);
   bool checkProximity(ImpulseInfo &info);
-  bool checkProximityAndCalculateImpulse(ClothNode *cloth_node, Face *face, double coeff_friction);
+  void checkProximityAndCalculateImpulse(ClothNode *cloth_node, Face *face, double coeff_friction);
+  void checkProximityAndCalculateImpulse(Node *node, ClothFace *cloth_face, double coeff_friction);
   void checkProximityAndCalculateImpulse(ClothFace *cloth_face,
                                          Face *obstacle_face,
                                          double coeff_friction);
