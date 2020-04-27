@@ -139,21 +139,9 @@ bool Collision::checkProximity(ImpulseInfo &info)
 bool Collision::checkProximity(ClothNode *cloth_node, Face *face, Vec3 &r_bary_coords)
 {
   /* Currently supports only static obstacle mesh */
-  Vec3 zero_vec = Vec3(0.0);
-  double coeff_friction = 0.0;
   Vec3 impulse;
-  ImpulseInfo info(&face->v[0]->node->x,
-                   &face->v[1]->node->x,
-                   &face->v[2]->node->x,
-                   &cloth_node->x0,
-                   &zero_vec,
-                   &zero_vec,
-                   &zero_vec,
-                   &cloth_node->v,
-                   &face->n,
-                   &coeff_friction,
-                   &cloth_node->mass,
-                   Vec3(0.0));
+  ImpulseInfo info(
+      &face->v[0]->node->x, &face->v[1]->node->x, &face->v[2]->node->x, &cloth_node->x0, &face->n);
   if (checkProximity(info)) {
     r_bary_coords = info.bary_coords;
     return true;
@@ -257,18 +245,7 @@ bool Collision::collisionTestVF(ClothNode *cloth_node, Face *face, Impact &r_imp
     Vec3 zero_vec = Vec3(0.0);
     double coeff_friction = 0.0d;
     Vec3 impulse;
-    ImpulseInfo info(&nx1,
-                     &nx2,
-                     &nx3,
-                     &nx4,
-                     &zero_vec,
-                     &zero_vec,
-                     &zero_vec,
-                     &v4,
-                     &r_impact.n,
-                     &coeff_friction,
-                     &cloth_node->mass,
-                     Vec3(0.0));
+    ImpulseInfo info(&nx1, &nx2, &nx3, &nx4, &r_impact.n);
     if (checkProximity(info)) {
       bary_coords = info.bary_coords;
       return true;

@@ -151,6 +151,22 @@ class ImpulseInfo {
     this->mass = mass;
     this->bary_coords = bary_coords;
   }
+
+  ImpulseInfo(Vec3 *x1, Vec3 *x2, Vec3 *x3, Vec3 *x4, Vec3 *n)
+  {
+    this->x1 = x1;
+    this->x2 = x2;
+    this->x3 = x3;
+    this->x4 = x4;
+    this->v1 = NULL;
+    this->v2 = NULL;
+    this->v3 = NULL;
+    this->v4 = NULL;
+    this->n = n;
+    this->coeff_friction = NULL;
+    this->mass = NULL;
+    this->bary_coords = Vec3(0.0);
+  }
 };
 
 #endif
