@@ -706,13 +706,6 @@ template<typename T> T sgn(const T &x)
   return x < 0 ? -1 : 1;
 }
 
-/* Solves a x^2 + b x + c == 0
- * Returns number of valid solutions
- * r_x is the solutions of the equation */
-int solveQuadratic(double a, double b, double c, double r_x[2]);
-
-double newtonsMethod(double a, double b, double c, double d, double x0, int init_dir);
-
 /* Solves a x^3 + b x^2 + c x + d == 0
  * Returns number of valid solutions
  * r_x is the solutions of the equation */

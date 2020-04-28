@@ -1,72 +1,131 @@
 #include "math.hpp"
 
-int solveQuadratic(double a, double b, double c, double r_x[2])
+/* Solving Cubic Equation
+ * Referenced "To Solve a Real Cubic Equation" by W. Kahan from
+ * University of California, Berkley - 1989 */
+
+static double disc(double a, double b, double c)
 {
-  // http://en.wikipedia.org/wiki/Quadratic_formula#Floating_point_implementation
-  double d = b * b - 4 * a * c;
-  if (d < 0) {
-    r_x[0] = -b / (2 * a);
-    return 0;
-  }
-  double q = -(b + sgn(b) * sqrt(d)) / 2;
-  int i = 0;
-  if (abs(a) > 1e-12 * abs(q))
-    r_x[i++] = q / a;
-  if (abs(q) > 1e-12 * abs(c))
-    r_x[i++] = c / q;
-  if (i == 2 && r_x[0] > r_x[1])
-    swap(r_x[0], r_x[1]);
-  return i;
+  return (b * b) - (a * c);
 }
 
-double newtonsMethod(double a, double b, double c, double d, double x0, int init_dir)
+static void qdrtc(
+    double A, double B, double C, double &r_x1, double &r_y1, double &r_x2, double &r_y2)
 {
-  if (init_dir != 0) {
-    // quadratic approximation around x0, assuming y' = 0
-    double y0 = d + x0 * (c + x0 * (b + x0 * a));
-    double ddy0 = 2 * b + x0 * (6 * a);
-    x0 += init_dir * sqrt(abs(2 * y0 / ddy0));
+  double b = -B * 0.5;
+  double q = disc(A, b, C);
+  if (q < 0.0) {
+    r_x1 = b / A;
+    r_x2 = r_x1;
+    r_y1 = sqrt(-q) / A;
+    r_y2 = -r_y1;
   }
-  for (int iter = 0; iter < 100; iter++) {
-    double y = d + x0 * (c + x0 * (b + x0 * a));
-    double dy = c + x0 * (2 * b + x0 * 3 * a);
-    if (dy == 0) {
-      return x0;
+  else {
+    r_y1 = 0.0;
+    r_y2 = 0.0;
+    double r = b + (sgn(b) * sqrt(q));
+    if (r == 0.0) {
+      r_x1 = C / A;
+      r_x2 = -r_x1;
     }
-    double x1 = x0 - y / dy;
-    if (abs(x0 - x1) < 1e-6) {
-      return x0;
+    else {
+      r_x1 = C / r;
+      r_x2 = r / A;
     }
-    x0 = x1;
   }
-  return x0;
+}
+
+static void eval(double X,
+                 double A,
+                 double B,
+                 double C,
+                 double D,
+                 double &r_Q,
+                 double &r_Q_dash,
+                 double &r_B1,
+                 double &r_C1)
+{
+  double q0 = A * X;
+  r_B1 = q0 + B;
+  r_C1 = (r_B1 * X) + C;
+  r_Q_dash = (q0 + r_B1) * X + r_C1;
+  r_Q = (r_C1 * X) + D;
+}
+
+static void qbc(double A,
+                double B,
+                double C,
+                double D,
+                double &r_X,
+                double &r_X1,
+                double &r_Y1,
+                double &r_X2,
+                double &r_Y2)
+{
+  double b1, c2;
+  if (A == 0.0) {
+    r_X = numeric_limits<double>::infinity();
+    A = B;
+    b1 = C;
+    c2 = D;
+    qdrtc(A, b1, c2, r_X1, r_Y1, r_X2, r_Y2);
+    return;
+  }
+  if (D == 0.0) {
+    r_X = 0;
+    b1 = B;
+    c2 = C;
+    qdrtc(A, b1, c2, r_X1, r_Y1, r_X2, r_Y2);
+    return;
+  }
+  r_X = -(B / A) / 3;
+  double q, q_dash;
+  eval(r_X, A, B, C, D, q, q_dash, b1, c2);
+  double t = q / A;
+  double r = cbrt(abs(t));
+  double s = sgn(t);
+  t = -q_dash / A;
+  if (t > 0.0) {
+    r = 1.324718 * max(r, sqrt(t));
+  }
+  double x0 = r_X - (s * r);
+  if (x0 == r_X) {
+    qdrtc(A, b1, c2, r_X1, r_Y1, r_X2, r_Y2);
+    return;
+  }
+  do {
+    r_X = x0;
+    eval(r_X, A, B, C, D, q, q_dash, b1, c2);
+    if (q_dash == 0.0) {
+      x0 = r_X;
+    }
+    else {
+      x0 = r_X - (q / q_dash) / (1 + numeric_limits<double>::epsilon());
+    }
+  } while (s * x0 <= s * r_X);
+
+  if (abs(A) * r_X * r_X > abs(D / r_X)) {
+    c2 = -D / r_X;
+    b1 = (c2 - C) / r_X;
+  }
+
+  qdrtc(A, b1, c2, r_X1, r_Y1, r_X2, r_Y2);
+  return;
 }
 
 int solveCubic(double a, double b, double c, double d, double r_x[3])
 {
-  double xc[2];
-  int ncrit = solveQuadratic(3 * a, 2 * b, c, xc);
-  if (ncrit == 0) {
-    r_x[0] = newtonsMethod(a, b, c, d, xc[0], 0);
-    return 1;
+  double x, x1, x2, y1, y2;
+  qbc(a, b, c, d, x, x1, y1, x2, y2);
+  int num_sol = 0;
+  r_x[num_sol++] = x;
+  if (y1 == 0.0) {
+    r_x[num_sol++] = x1;
   }
-  else if (ncrit == 1) {  // cubic is actually quadratic
-    return solveQuadratic(b, c, d, r_x);
+  if (y2 == 0.0) {
+    r_x[num_sol++] = x2;
   }
-  else {
-    double yc[2] = {d + xc[0] * (c + xc[0] * (b + xc[0] * a)),
-                    d + xc[1] * (c + xc[1] * (b + xc[1] * a))};
-    int i = 0;
-    if (yc[0] * a >= 0) {
-      r_x[i++] = newtonsMethod(a, b, c, d, xc[0], -1);
-    }
-    if (yc[0] * yc[1] <= 0) {
-      int closer = abs(yc[0]) < abs(yc[1]) ? 0 : 1;
-      r_x[i++] = newtonsMethod(a, b, c, d, xc[closer], closer == 0 ? 1 : -1);
-    }
-    if (yc[1] * a <= 0) {
-      r_x[i++] = newtonsMethod(a, b, c, d, xc[1], 1);
-    }
-    return i;
-  }
+  return num_sol;
 }
+
+/* *** END *** (Solving Cubic Equation) */
