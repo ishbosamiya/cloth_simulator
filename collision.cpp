@@ -549,7 +549,7 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
   }
 
   /* Finding impact zones for Rigid Impact Zone fail safe */
-  int max_iter = 1;
+  int max_iter = 100;
   int iter;
   vector<ImpactZone *> zones;
   for (iter = 1; iter <= max_iter; iter++) {
@@ -581,6 +581,11 @@ void Collision::solveCollision(ClothMesh *cloth_mesh, Mesh *obstacle_mesh)
     }
     cloth_mesh->updateBVH();
     obstacle_mesh->updateBVH();
+
+    if (overlap) {
+      delete[] overlap;
+      overlap = NULL;
+    }
   }
   if (iter >= max_iter) {
     cout << "warning: collision failsafe iterations have been crossed!" << endl;
