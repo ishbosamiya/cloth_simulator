@@ -40,18 +40,26 @@ static uint padding(uint offset, uint alignment)
 uchar GPUVertFormat::copyAttributeName(const char *name)
 {
   /* strncpy does 110% of what we need; let's do exactly 100% */
-  uchar name_offset = name_offset;
-  char *name_copy = names + name_offset;
+  uchar name_offset = this->name_offset;
+  char *name_copy = this->names + name_offset;
   uint available = GPU_VERT_ATTR_NAMES_BUF_LEN - name_offset;
+  bool terminated = false;
 
   for (uint i = 0; i < available; i++) {
     const char c = name[i];
     name_copy[i] = c;
     if (c == '\0') {
-      name_offset += (i + 1);
+      terminated = true;
+      this->name_offset += (i + 1);
       break;
     }
   }
+#if TRUST_NO_ONE
+  assert(terminated);
+  assert(this->name_offset <= GPU_VERT_ATTR_NAMES_BUF_LEN);
+#else
+  (void)terminated;
+#endif
   return name_offset;
 }
 
