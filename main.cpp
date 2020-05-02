@@ -36,7 +36,7 @@ void immTest(glm::mat4 &projection, glm::mat4 view)
   uint pos = format->addAttribute("pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
   uint col = format->addAttribute("color", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
 
-  immBegin(GPU_PRIM_TRIS, 3);
+  immBegin(GPU_PRIM_TRIS, 3, &smooth_shader);
 
   immAttr4f(col, 0.5, 0.2, 0.7, 1.0);
   immVertex3f(pos, 0, 0, 0);

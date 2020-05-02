@@ -103,9 +103,9 @@ uint GPUVertFormat::addAttribute(const char *name,
                                  GPUVertFetchMode fetch_mode)
 {
 #if TRUST_NO_ONE
-  assert(name_len < GPU_VERT_FORMAT_MAX_NAMES); /* there's room for more */
-  assert(attr_len < GPU_VERT_ATTR_MAX_LEN);     /* there's room for more */
-  assert(!packed);                              /* packed means frozen/locked */
+  assert(this->name_len < GPU_VERT_FORMAT_MAX_NAMES); /* there's room for more */
+  assert(this->attr_len < GPU_VERT_ATTR_MAX_LEN);     /* there's room for more */
+  assert(!this->packed);                              /* packed means frozen/locked */
   assert((comp_len >= 1 && comp_len <= 4) || comp_len == 8 || comp_len == 12 || comp_len == 16);
 
   switch (comp_type) {
@@ -129,12 +129,12 @@ uint GPUVertFormat::addAttribute(const char *name,
       assert(comp_len != 8 && comp_len != 12 && comp_len != 16);
   }
 #endif
-  name_len++; /* multiname support */
+  this->name_len++; /* multiname support */
 
-  const uint attr_id = attr_len++;
-  GPUVertAttr *attr = &attrs[attr_id];
+  const uint attr_id = this->attr_len++;
+  GPUVertAttr *attr = &this->attrs[attr_id];
 
-  attr->names[attr->name_len++] = copyAttributeName(name);
+  attr->names[attr->name_len++] = this->copyAttributeName(name);
   attr->comp_type = comp_type;
   attr->gl_comp_type = convert_comp_type_to_gl(comp_type);
   attr->comp_len = (comp_type == GPU_COMP_I10) ?
@@ -149,6 +149,9 @@ uint GPUVertFormat::addAttribute(const char *name,
 
 void GPUVertFormat::clear()
 {
+#if TRUST_NO_ONE
+  memset(this, 0, sizeof(GPUVertFormat));
+#else
   attr_len = 0;
   packed = false;
   name_offset = 0;
@@ -157,6 +160,7 @@ void GPUVertFormat::clear()
   for (uint i = 0; i < GPU_VERT_ATTR_MAX_LEN; i++) {
     attrs[i].name_len = 0;
   }
+#endif
 }
 
 const char *GPUVertFormat::getAttributeName(const GPUVertAttr *attr, uint n_idx)
@@ -193,12 +197,12 @@ void GPUVertFormat::pack()
   /* TODO: realloc just enough to hold the final combo string. And just enough to
    * hold used attributes, not all 16. */
 
-  GPUVertAttr *a0 = &attrs[0];
+  GPUVertAttr *a0 = &this->attrs[0];
   a0->offset = 0;
   uint offset = a0->sz;
 
-  for (uint a_idx = 1; a_idx < attr_len; a_idx++) {
-    GPUVertAttr *a = &attrs[a_idx];
+  for (uint a_idx = 1; a_idx < this->attr_len; a_idx++) {
+    GPUVertAttr *a = &this->attrs[a_idx];
     uint mid_padding = padding(offset, a->attrAlign());
     offset += mid_padding;
     a->offset = offset;
@@ -207,8 +211,8 @@ void GPUVertFormat::pack()
 
   uint end_padding = padding(offset, a0->attrAlign());
 
-  stride = offset + end_padding;
-  packed = true;
+  this->stride = offset + end_padding;
+  this->packed = true;
 }
 
 static GLuint GPU_buf_alloc()
@@ -250,7 +254,21 @@ void immDestroy()
   initialized = false;
 }
 
-void immBegin(GPUPrimType prim_type, uint vertex_len)
+static void write_attr_location(GPUAttrBinding *binding, uint a_idx, uint location)
+{
+#if TRUST_NO_ONE
+  assert(a_idx < GPU_VERT_ATTR_MAX_LEN);
+  assert(location < GPU_VERT_ATTR_MAX_LEN);
+#endif
+  const uint shift = 4 * a_idx;
+  const uint64_t mask = ((uint64_t)0xF) << shift;
+  /* overwrite this attr's previous location */
+  binding->loc_bits = (binding->loc_bits & ~mask) | (location << shift);
+  /* mark this attr as enabled */
+  binding->enabled_bits |= 1 << a_idx;
+}
+
+void immBegin(GPUPrimType prim_type, uint vertex_len, Shader *shader)
 {
   if (!imm.vertex_format.packed) {
     imm.vertex_format.pack();
@@ -258,6 +276,16 @@ void immBegin(GPUPrimType prim_type, uint vertex_len)
   /* TODO(ish): need to get attribute locations and enable the correct
    * attributes */
   /* get_attr_locations(&imm.vertex_format, &imm.attr_binding, shaderface); */
+  imm.attr_binding.clear();
+  for (uint a_idx = 0; a_idx < imm.vertex_format.attr_len; a_idx++) {
+    const GPUVertAttr *a = &imm.vertex_format.attrs[a_idx];
+    for (uint n_idx = 0; n_idx < a->name_len; n_idx++) {
+      const char *name = imm.vertex_format.getAttributeName(a, n_idx);
+
+      uint location = glGetAttribLocation(shader->ID, name);
+      write_attr_location(&imm.attr_binding, a_idx, location);
+    }
+  }
 
   imm.prim_type = prim_type;
   imm.vertex_len = vertex_len;
@@ -309,14 +337,18 @@ void immBegin(GPUPrimType prim_type, uint vertex_len)
       GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT |
           (imm.strict_vertex_len ? 0 : GL_MAP_FLUSH_EXPLICIT_BIT));
 
+#if TRUST_NO_ONE
+  assert(imm.buffer_data != NULL);
+#endif
+
   imm.buffer_bytes_mapped = bytes_needed;
   imm.vertex_data = imm.buffer_data;
 }
 
-void immBeginAtMost(GPUPrimType prim_type, uint vertex_len)
+void immBeginAtMost(GPUPrimType prim_type, uint vertex_len, Shader *shader)
 {
   imm.strict_vertex_len = false;
-  immBegin(prim_type, vertex_len);
+  immBegin(prim_type, vertex_len, shader);
 }
 
 static uint read_attr_location(const GPUAttrBinding *binding, uint a_idx)
@@ -360,6 +392,10 @@ static void immDrawSetup()
       case GPU_FETCH_FLOAT:
       case GPU_FETCH_INT_TO_FLOAT:
         glVertexAttribPointer(loc, a->comp_len, a->gl_comp_type, GL_FALSE, stride, pointer);
+        /* cout << "loc: " << loc << " a->comp_len: " << a->comp_len */
+        /*      << " a->gl_comp_type: " << a->gl_comp_type << " stride: " << stride */
+        /*      << " imm.buffer_offset: " << imm.buffer_offset << " a->offset: " << a->offset */
+        /*      << " offset: " << offset << endl; */
         break;
       case GPU_FETCH_INT_TO_FLOAT_UNIT:
         glVertexAttribPointer(loc, a->comp_len, a->gl_comp_type, GL_TRUE, stride, pointer);
@@ -431,6 +467,13 @@ static void setAttrValueBit(uint attr_id)
 void immAttr1f(uint attr_id, float x)
 {
   GPUVertAttr *attr = &imm.vertex_format.attrs[attr_id];
+#if TRUST_NO_ONE
+  assert(attr_id < imm.vertex_format.attr_len);
+  assert(attr->comp_type == GPU_COMP_F32);
+  assert(attr->comp_len == 1);
+  assert(imm.vertex_idx < imm.vertex_len);
+  assert(imm.prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+#endif
   setAttrValueBit(attr_id);
 
   float *data = (float *)(imm.vertex_data + attr->offset);
@@ -442,6 +485,13 @@ void immAttr1f(uint attr_id, float x)
 void immAttr2f(uint attr_id, float x, float y)
 {
   GPUVertAttr *attr = &imm.vertex_format.attrs[attr_id];
+#if TRUST_NO_ONE
+  assert(attr_id < imm.vertex_format.attr_len);
+  assert(attr->comp_type == GPU_COMP_F32);
+  assert(attr->comp_len == 2);
+  assert(imm.vertex_idx < imm.vertex_len);
+  assert(imm.prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+#endif
   setAttrValueBit(attr_id);
 
   float *data = (float *)(imm.vertex_data + attr->offset);
@@ -454,6 +504,13 @@ void immAttr2f(uint attr_id, float x, float y)
 void immAttr3f(uint attr_id, float x, float y, float z)
 {
   GPUVertAttr *attr = &imm.vertex_format.attrs[attr_id];
+#if TRUST_NO_ONE
+  assert(attr_id < imm.vertex_format.attr_len);
+  assert(attr->comp_type == GPU_COMP_F32);
+  assert(attr->comp_len == 3);
+  assert(imm.vertex_idx < imm.vertex_len);
+  assert(imm.prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+#endif
   setAttrValueBit(attr_id);
 
   float *data = (float *)(imm.vertex_data + attr->offset);
@@ -467,6 +524,13 @@ void immAttr3f(uint attr_id, float x, float y, float z)
 void immAttr4f(uint attr_id, float x, float y, float z, float w)
 {
   GPUVertAttr *attr = &imm.vertex_format.attrs[attr_id];
+#if TRUST_NO_ONE
+  assert(attr_id < imm.vertex_format.attr_len);
+  assert(attr->comp_type == GPU_COMP_F32);
+  assert(attr->comp_len == 4);
+  assert(imm.vertex_idx < imm.vertex_len);
+  assert(imm.prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+#endif
   setAttrValueBit(attr_id);
 
   float *data = (float *)(imm.vertex_data + attr->offset);

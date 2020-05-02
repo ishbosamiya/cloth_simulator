@@ -8,6 +8,8 @@
 #include <cassert>
 #include <iostream>
 
+#include "shader.hpp"
+
 using namespace std;
 
 #define TRUST_NO_ONE 1
@@ -62,6 +64,12 @@ class GPUAttrBinding {
   uint64_t loc_bits;
   /** 1 bit for each attribute. */
   uint16_t enabled_bits;
+
+  void clear()
+  {
+    loc_bits = 0;
+    enabled_bits = 0;
+  }
 };
 
 class GPUVertAttr {
@@ -150,8 +158,8 @@ GPUVertFormat *immVertexFormat();
 void immInit();
 void immDestroy();
 
-void immBegin(GPUPrimType prim_type, uint vertex_len);
-void immBeginAtMost(GPUPrimType prim_type, uint vertex_len);
+void immBegin(GPUPrimType prim_type, uint vertex_len, Shader *shader);
+void immBeginAtMost(GPUPrimType prim_type, uint vertex_len, Shader *shader);
 void immEnd();
 
 /* Provide attribute values that can change per vertex. */
