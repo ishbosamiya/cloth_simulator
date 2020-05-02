@@ -57,39 +57,39 @@ class GPUAttrBinding {
   uint16_t enabled_bits;
 };
 
+class GPUVertAttr {
+ public:
+  uint fetch_mode : 2;
+  uint comp_type : 3;
+  /* 1 to 4 or 8 or 12 or 16 */
+  uint comp_len : 5;
+  /* size in bytes, 1 to 64 */
+  uint sz : 7;
+  /* from beginning of vertex, in bytes */
+  uint offset : 11;
+  /* up to GPU_VERT_ATTR_MAX_NAMES */
+  uint name_len : 3;
+  uint gl_comp_type;
+  /* -- 8 Bytes -- */
+  uchar names[GPU_VERT_ATTR_MAX_NAMES];
+
+  uint compSZ(GPUVertCompType type)
+  {
+    const GLubyte sizes[] = {1, 1, 2, 2, 4, 4, 4};
+    return sizes[type];
+  }
+
+  uint attrSZ()
+  {
+    if (comp_type == GPU_COMP_I10) {
+      return 4; /* always packed as 10_10_10_2 */
+    }
+    return comp_len * compSZ((GPUVertCompType)comp_type);
+  }
+};
+
 class GPUVertFormat {
- private:
-  class GPUVertAttr {
-   public:
-    uint fetch_mode : 2;
-    uint comp_type : 3;
-    /* 1 to 4 or 8 or 12 or 16 */
-    uint comp_len : 5;
-    /* size in bytes, 1 to 64 */
-    uint sz : 7;
-    /* from beginning of vertex, in bytes */
-    uint offset : 11;
-    /* up to GPU_VERT_ATTR_MAX_NAMES */
-    uint name_len : 3;
-    uint gl_comp_type;
-    /* -- 8 Bytes -- */
-    uchar names[GPU_VERT_ATTR_MAX_NAMES];
-
-    uint compSZ(GPUVertCompType type)
-    {
-      const GLubyte sizes[] = {1, 1, 2, 2, 4, 4, 4};
-      return sizes[type];
-    }
-
-    uint attrSZ()
-    {
-      if (comp_type == GPU_COMP_I10) {
-        return 4; /* always packed as 10_10_10_2 */
-      }
-      return comp_len * compSZ((GPUVertCompType)comp_type);
-    }
-  };
-
+ public:
   /** 0 to 16 (GPU_VERT_ATTR_MAX_LEN). */
   uint attr_len : 5;
   /** Total count of active vertex attribute names. (max GPU_VERT_FORMAT_MAX_NAMES) */
@@ -110,7 +110,6 @@ class GPUVertFormat {
   uchar copyAttributeName(const char *name);
   const char *getAttributeName(const GPUVertAttr *attr, uint n_idx);
 
- public:
   GPUVertFormat()
   {
     clear();
@@ -122,9 +121,18 @@ class GPUVertFormat {
                     uint comp_len,
                     GPUVertFetchMode fetch_mode);
   int getAttributeID(const char *name);
+  uint vertexBufferSize(uint vertex_len);
+  inline uint getStride()
+  {
+    return stride;
+  }
 };
 
 void immInit();
 void immDestroy();
+
+void immBegin(GPUPrimType prim_type, uint vertex_len);
+void immBeginAtMost(GPUPrimType prim_type, uint vertex_len);
+void immEnd();
 
 #endif
