@@ -31,6 +31,12 @@ static uint imm_buffer_size = DEFAULT_INTERNAL_BUFFER_SIZE;
 static bool initialized = false;
 static GPUImmediate imm;
 
+static uint padding(uint offset, uint alignment)
+{
+  const uint mod = offset % alignment;
+  return (mod == 0) ? 0 : (alignment - mod);
+}
+
 uchar GPUVertFormat::copyAttributeName(const char *name)
 {
   /* strncpy does 110% of what we need; let's do exactly 100% */
@@ -88,6 +94,33 @@ uint GPUVertFormat::addAttribute(const char *name,
                                  uint comp_len,
                                  GPUVertFetchMode fetch_mode)
 {
+#if TRUST_NO_ONE
+  assert(name_len < GPU_VERT_FORMAT_MAX_NAMES); /* there's room for more */
+  assert(attr_len < GPU_VERT_ATTR_MAX_LEN);     /* there's room for more */
+  assert(!packed);                              /* packed means frozen/locked */
+  assert((comp_len >= 1 && comp_len <= 4) || comp_len == 8 || comp_len == 12 || comp_len == 16);
+
+  switch (comp_type) {
+    case GPU_COMP_F32:
+      /* float type can only kept as float */
+      assert(fetch_mode == GPU_FETCH_FLOAT);
+      break;
+    case GPU_COMP_I10:
+      /* 10_10_10 format intended for normals (xyz) or colors (rgb)
+       * extra component packed.w can be manually set to { -2, -1, 0, 1 } */
+      assert(comp_len == 3 || comp_len == 4);
+
+      /* Not strictly required, may relax later. */
+      assert(fetch_mode == GPU_FETCH_INT_TO_FLOAT_UNIT);
+
+      break;
+    default:
+      /* integer types can be kept as int or converted/normalized to float */
+      assert(fetch_mode != GPU_FETCH_FLOAT);
+      /* only support float matrices (see Batch_update_program_bindings) */
+      assert(comp_len != 8 && comp_len != 12 && comp_len != 16);
+  }
+#endif
   name_len++; /* multiname support */
 
   const uint attr_id = attr_len++;
@@ -142,6 +175,34 @@ uint GPUVertFormat::vertexBufferSize(uint vertex_len)
   return stride * vertex_len;
 }
 
+void GPUVertFormat::pack()
+{
+  /* For now, attributes are packed in the order they were added,
+   * making sure each attribute is naturally aligned (add padding where necessary)
+   * Later we can implement more efficient packing w/ reordering
+   * (keep attribute ID order, adjust their offsets to reorder in buffer). */
+
+  /* TODO: realloc just enough to hold the final combo string. And just enough to
+   * hold used attributes, not all 16. */
+
+  GPUVertAttr *a0 = &attrs[0];
+  a0->offset = 0;
+  uint offset = a0->sz;
+
+  for (uint a_idx = 1; a_idx < attr_len; a_idx++) {
+    GPUVertAttr *a = &attrs[a_idx];
+    uint mid_padding = padding(offset, a->attrAlign());
+    offset += mid_padding;
+    a->offset = offset;
+    offset += a->sz;
+  }
+
+  uint end_padding = padding(offset, a0->attrAlign());
+
+  stride = offset + end_padding;
+  packed = true;
+}
+
 static GLuint GPU_buf_alloc()
 {
   GLuint new_buffer_id = 0;
@@ -152,6 +213,12 @@ static GLuint GPU_buf_alloc()
 static void GPU_buf_free(GLuint buf_id)
 {
   glDeleteBuffers(1, &buf_id);
+}
+
+GPUVertFormat *immVertexFormat()
+{
+  imm.vertex_format.clear();
+  return &imm.vertex_format;
 }
 
 void immInit()
@@ -175,14 +242,15 @@ void immDestroy()
   initialized = false;
 }
 
-static uint padding(uint offset, uint alignment)
-{
-  const uint mod = offset % alignment;
-  return (mod == 0) ? 0 : (alignment - mod);
-}
-
 void immBegin(GPUPrimType prim_type, uint vertex_len)
 {
+  if (!imm.vertex_format.packed) {
+    imm.vertex_format.pack();
+  }
+  /* TODO(ish): need to get attribute locations and enable the correct
+   * attributes */
+  /* get_attr_locations(&imm.vertex_format, &imm.attr_binding, shaderface); */
+
   imm.prim_type = prim_type;
   imm.vertex_len = vertex_len;
   imm.vertex_idx = 0;
@@ -211,7 +279,7 @@ void immBegin(GPUPrimType prim_type, uint vertex_len)
 
   /* ensure vertex data is aligned */
   /* Might waste a little space, but it's safe. */
-  const uint pre_padding = padding(imm.buffer_offset, imm.vertex_format.getStride());
+  const uint pre_padding = padding(imm.buffer_offset, imm.vertex_format.stride);
 
   if (!recreate_buffer && ((bytes_needed + pre_padding) <= available_bytes)) {
     imm.buffer_offset += pre_padding;
@@ -296,11 +364,20 @@ static void immDrawSetup()
 
 void immEnd()
 {
+#if TRUST_NO_ONE
+  assert(imm.prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+#endif
   uint buffer_bytes_used;
   if (imm.strict_vertex_len) {
+#if TRUST_NO_ONE
+    assert(imm.vertex_idx == imm.vertex_len); /* with all vertices defined */
+#endif
     buffer_bytes_used = imm.buffer_bytes_mapped;
   }
   else {
+#if TRUST_NO_ONE
+    assert(imm.vertex_idx <= imm.vertex_len);
+#endif
     if (imm.vertex_idx == imm.vertex_len) {
       buffer_bytes_used = imm.buffer_bytes_mapped;
     }
@@ -395,9 +472,17 @@ void immAttr4f(uint attr_id, float x, float y, float z, float w)
 
 static void immEndVertex() /* and move on to the next vertex */
 {
+#if TRUST_NO_ONE
+  assert(imm.prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+  assert(imm.vertex_idx < imm.vertex_len);
+#endif
+
   /* Have all attributes been assigned values?
    * If not, copy value from previous vertex. */
   if (imm.unassigned_attr_bits) {
+#if TRUST_NO_ONE
+    assert(imm.vertex_idx > 0); /* first vertex must have all attributes specified */
+#endif
     for (uint a_idx = 0; a_idx < imm.vertex_format.attr_len; a_idx++) {
       if ((imm.unassigned_attr_bits >> a_idx) & 1) {
         const GPUVertAttr *a = &imm.vertex_format.attrs[a_idx];

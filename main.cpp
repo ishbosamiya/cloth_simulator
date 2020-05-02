@@ -12,6 +12,7 @@
 #include "opengl_mesh.hpp"
 #include "simulation.hpp"
 #include "text.hpp"
+#include "gpu_immediate.hpp"
 
 using namespace std;
 
@@ -20,6 +21,34 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 void handlePinConstraints(GLFWwindow *window, Simulation *simulation, Camera *camera);
+
+void immTest(glm::mat4 &projection, glm::mat4 view)
+{
+  static Shader smooth_shader("shaders/shader_3D_smooth_color.vert",
+                              "shaders/shader_3D_smooth_color.frag");
+  glm::mat4 model = glm::mat4(1.0);
+  smooth_shader.use();
+  smooth_shader.setMat4("projection", projection);
+  smooth_shader.setMat4("view", view);
+  smooth_shader.setMat4("model", model);
+
+  GPUVertFormat *format = immVertexFormat();
+  uint pos = format->addAttribute("pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
+  uint col = format->addAttribute("color", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
+
+  immBegin(GPU_PRIM_TRIS, 3);
+
+  immAttr4f(col, 0.5, 0.2, 0.7, 1.0);
+  immVertex3f(pos, 0, 0, 0);
+
+  immAttr4f(col, 0.2, 0.6, 0.7, 1.0);
+  immVertex3f(pos, 5, 2, -1);
+
+  immAttr4f(col, 0.2, 0.6, 0.7, 1.0);
+  immVertex3f(pos, -5, 2, -1);
+
+  immEnd();
+}
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -83,6 +112,9 @@ int main()
    * rest of it */
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  /* Initialize gpu_immediate work-alike */
+  immInit();
 
   glm::vec3 light_dir(-0.7f, -1.0f, -0.7f);
   // build and compile our shader program
@@ -156,17 +188,17 @@ int main()
     directional_light_shader.setMat4("projection", projection);
     directional_light_shader.setMat4("view", view);
 
-    mesh.draw();
+    /* mesh.draw(); */
 
     light_shader.use();
     light_shader.setMat4("projection", projection);
     light_shader.setMat4("view", view);
 
-    light.draw();
+    /* light.draw(); */
 
     directional_light_shader.use();
     directional_light_shader.setVec3("material.color", 0.7f, 0.5f, 0.5f);
-    ob_mesh.draw();
+    /* ob_mesh.draw(); */
 
     if (!simulation_pause) {
       simulation.update();
@@ -178,16 +210,21 @@ int main()
     simulation.drawConstraints(
         projection, view, draw_constraints_stretch, draw_constraints_bending);
 
-    char fps_text[25];
-    snprintf(fps_text, 25, "fps: %.2f", fps);
-    text.renderText(text_shader, fps_text, "ubuntu", 7.0, SCR_HEIGHT - 20, 0.3);
-    snprintf(fps_text, 25, "avg_fps: %.2f", avg_fps);
-    text.renderText(text_shader, fps_text, "ubuntu", 7.0, SCR_HEIGHT - 40, 0.3);
+    /* char fps_text[25]; */
+    /* snprintf(fps_text, 25, "fps: %.2f", fps); */
+    /* text.renderText(text_shader, fps_text, "ubuntu", 7.0, SCR_HEIGHT - 20, 0.3); */
+    /* snprintf(fps_text, 25, "avg_fps: %.2f", avg_fps); */
+    /* text.renderText(text_shader, fps_text, "ubuntu", 7.0, SCR_HEIGHT - 40, 0.3); */
+
+    immTest(projection, view);
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
+
+  /* terminate gpu_immediate work-alike */
+  immDestroy();
 
   // glfw: terminate, clearing all previously allocated GLFW resources.
   glfwTerminate();

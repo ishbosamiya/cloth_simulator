@@ -5,7 +5,14 @@
 
 #include <glad/glad.h>
 #include <cstring>
+#include <cassert>
+#include <iostream>
 
+using namespace std;
+
+#define TRUST_NO_ONE 1
+
+#define GPU_VERT_FORMAT_MAX_NAMES 63
 #define GPU_VERT_ATTR_MAX_LEN 16
 #define GPU_VERT_ATTR_MAX_NAMES 6
 #define GPU_VERT_ATTR_NAMES_BUF_LEN 256
@@ -86,6 +93,20 @@ class GPUVertAttr {
     }
     return comp_len * compSZ((GPUVertCompType)comp_type);
   }
+
+  uint attrAlign()
+  {
+    if (comp_type == GPU_COMP_I10) {
+      return 4; /* always packed as 10_10_10_2 */
+    }
+    uint c = compSZ((GPUVertCompType)comp_type);
+    if (comp_len == 3 && c <= 2) {
+      return 4 * c; /* AMD HW can't fetch these well, so pad it out (other vendors too?) */
+    }
+    else {
+      return c; /* most fetches are ok if components are naturally aligned */
+    }
+  }
 };
 
 class GPUVertFormat {
@@ -122,12 +143,10 @@ class GPUVertFormat {
                     GPUVertFetchMode fetch_mode);
   int getAttributeID(const char *name);
   uint vertexBufferSize(uint vertex_len);
-  inline uint getStride()
-  {
-    return stride;
-  }
+  void pack();
 };
 
+GPUVertFormat *immVertexFormat();
 void immInit();
 void immDestroy();
 
