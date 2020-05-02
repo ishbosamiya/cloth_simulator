@@ -227,6 +227,18 @@ static void GPU_buf_free(GLuint buf_id)
   glDeleteBuffers(1, &buf_id);
 }
 
+static GLuint GPU_vao_alloc()
+{
+  GLuint new_vao_id = 0;
+  glGenVertexArrays(1, &new_vao_id);
+  return new_vao_id;
+}
+
+static void GPU_vao_free(GLuint vao_id)
+{
+  glDeleteVertexArrays(1, &vao_id);
+}
+
 GPUVertFormat *immVertexFormat()
 {
   imm.vertex_format.clear();
@@ -252,6 +264,28 @@ void immDestroy()
 {
   GPU_buf_free(imm.vbo_id);
   initialized = false;
+}
+
+void immActivate()
+{
+#if TRUST_NO_ONE
+  assert(initialized);
+  assert(imm.prim_type == GPU_PRIM_NONE); /* make sure we're not between a Begin/End pair */
+  assert(imm.vao_id == 0);
+#endif
+  imm.vao_id = GPU_vao_alloc();
+}
+
+void immDeactivate()
+{
+#if TRUST_NO_ONE
+  assert(initialized);
+  assert(imm.prim_type == GPU_PRIM_NONE); /* make sure we're not between a Begin/End pair */
+  assert(imm.vao_id != 0);
+#endif
+  GPU_vao_free(imm.vao_id);
+  imm.vao_id = 0;
+  imm.prev_enabled_attr_bits = 0;
 }
 
 static void write_attr_location(GPUAttrBinding *binding, uint a_idx, uint location)

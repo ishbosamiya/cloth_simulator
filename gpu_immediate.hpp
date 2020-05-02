@@ -158,6 +158,9 @@ GPUVertFormat *immVertexFormat();
 void immInit();
 void immDestroy();
 
+void immActivate();
+void immDeactivate();
+
 void immBegin(GPUPrimType prim_type, uint vertex_len, Shader *shader);
 void immBeginAtMost(GPUPrimType prim_type, uint vertex_len, Shader *shader);
 void immEnd();
