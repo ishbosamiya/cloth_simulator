@@ -33,6 +33,30 @@ enum GPUVertFetchMode {
   GPU_FETCH_INT_TO_FLOAT,      /* 127 (any int type) -> 127.0 */
 };
 
+enum GPUPrimType {
+  GPU_PRIM_POINTS,
+  GPU_PRIM_LINES,
+  GPU_PRIM_TRIS,
+  GPU_PRIM_LINE_STRIP,
+  GPU_PRIM_LINE_LOOP, /* GL has this, Vulkan does not */
+  GPU_PRIM_TRI_STRIP,
+  GPU_PRIM_TRI_FAN,
+
+  GPU_PRIM_LINES_ADJ,
+  GPU_PRIM_TRIS_ADJ,
+  GPU_PRIM_LINE_STRIP_ADJ,
+
+  GPU_PRIM_NONE,
+};
+
+class GPUAttrBinding {
+ public:
+  /** Store 4 bits for each of the 16 attributes. */
+  uint64_t loc_bits;
+  /** 1 bit for each attribute. */
+  uint16_t enabled_bits;
+};
+
 class GPUVertFormat {
  private:
   class GPUVertAttr {
@@ -99,5 +123,8 @@ class GPUVertFormat {
                     GPUVertFetchMode fetch_mode);
   int getAttributeID(const char *name);
 };
+
+void immInit();
+void immDestroy();
 
 #endif

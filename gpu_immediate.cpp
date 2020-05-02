@@ -1,5 +1,36 @@
 #include "gpu_immediate.hpp"
 
+class GPUImmediate {
+ public:
+  /* current draw call */
+  GLubyte *buffer_data;
+  uint buffer_offset;
+  uint buffer_bytes_mapped;
+  uint vertex_len;
+  bool strict_vertex_len;
+  GPUPrimType prim_type;
+
+  GPUVertFormat vertex_format;
+
+  /* current vertex */
+  uint vertex_idx;
+  GLubyte *vertex_data;
+  uint16_t unassigned_attr_bits; /* which attributes of current vertex have
+                                  * not been given values? */
+
+  GLuint vbo_id;
+  GLuint vao_id;
+
+  GPUAttrBinding attr_binding;
+  uint16_t prev_enabled_attr_bits; /* <-- only affects this VAO, so we're ok */
+};
+
+/* size of internal buffer */
+#define DEFAULT_INTERNAL_BUFFER_SIZE (4 * 1024 * 1024)
+static uint imm_buffer_size = DEFAULT_INTERNAL_BUFFER_SIZE;
+static bool initialized = false;
+static GPUImmediate imm;
+
 uchar GPUVertFormat::copyAttributeName(const char *name)
 {
   /* strncpy does 110% of what we need; let's do exactly 100% */
@@ -87,4 +118,37 @@ int GPUVertFormat::getAttributeID(const char *name)
     }
   }
   return -1;
+}
+
+static GLuint GPU_buf_alloc()
+{
+  GLuint new_buffer_id = 0;
+  glGenBuffers(1, &new_buffer_id);
+  return new_buffer_id;
+}
+
+static void GPU_buf_free(GLuint buf_id)
+{
+  glDeleteBuffers(1, &buf_id);
+}
+
+void immInit()
+{
+  memset(&imm, 0, sizeof(GPUImmediate));
+
+  imm.vbo_id = GPU_buf_alloc();
+  glBindBuffer(GL_ARRAY_BUFFER, imm.vbo_id);
+  glBufferData(GL_ARRAY_BUFFER, imm_buffer_size, NULL, GL_DYNAMIC_DRAW);
+
+  imm.prim_type = GPU_PRIM_NONE;
+  imm.strict_vertex_len = true;
+
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  initialized = true;
+}
+
+void immDestroy()
+{
+  GPU_buf_free(imm.vbo_id);
+  initialized = false;
 }
