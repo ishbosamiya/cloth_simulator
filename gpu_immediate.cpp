@@ -336,3 +336,97 @@ void immEnd()
   imm.prim_type = GPU_PRIM_NONE;
   imm.strict_vertex_len = true;
 }
+
+static void setAttrValueBit(uint attr_id)
+{
+  uint16_t mask = 1 << attr_id;
+  imm.unassigned_attr_bits &= ~mask;
+}
+
+void immAttr1f(uint attr_id, float x)
+{
+  GPUVertAttr *attr = &imm.vertex_format.attrs[attr_id];
+  setAttrValueBit(attr_id);
+
+  float *data = (float *)(imm.vertex_data + attr->offset);
+  /*  printf("%s %td %p\n", __FUNCTION__, (GLubyte*)data - imm.buffer_data, data); */
+
+  data[0] = x;
+}
+
+void immAttr2f(uint attr_id, float x, float y)
+{
+  GPUVertAttr *attr = &imm.vertex_format.attrs[attr_id];
+  setAttrValueBit(attr_id);
+
+  float *data = (float *)(imm.vertex_data + attr->offset);
+  /*  printf("%s %td %p\n", __FUNCTION__, (GLubyte*)data - imm.buffer_data, data); */
+
+  data[0] = x;
+  data[1] = y;
+}
+
+void immAttr3f(uint attr_id, float x, float y, float z)
+{
+  GPUVertAttr *attr = &imm.vertex_format.attrs[attr_id];
+  setAttrValueBit(attr_id);
+
+  float *data = (float *)(imm.vertex_data + attr->offset);
+  /*  printf("%s %td %p\n", __FUNCTION__, (GLubyte*)data - imm.buffer_data, data); */
+
+  data[0] = x;
+  data[1] = y;
+  data[2] = z;
+}
+
+void immAttr4f(uint attr_id, float x, float y, float z, float w)
+{
+  GPUVertAttr *attr = &imm.vertex_format.attrs[attr_id];
+  setAttrValueBit(attr_id);
+
+  float *data = (float *)(imm.vertex_data + attr->offset);
+  /*  printf("%s %td %p\n", __FUNCTION__, (GLubyte*)data - imm.buffer_data, data); */
+
+  data[0] = x;
+  data[1] = y;
+  data[2] = z;
+  data[3] = w;
+}
+
+static void immEndVertex() /* and move on to the next vertex */
+{
+  /* Have all attributes been assigned values?
+   * If not, copy value from previous vertex. */
+  if (imm.unassigned_attr_bits) {
+    for (uint a_idx = 0; a_idx < imm.vertex_format.attr_len; a_idx++) {
+      if ((imm.unassigned_attr_bits >> a_idx) & 1) {
+        const GPUVertAttr *a = &imm.vertex_format.attrs[a_idx];
+
+        GLubyte *data = imm.vertex_data + a->offset;
+        memcpy(data, data - imm.vertex_format.stride, a->sz);
+      }
+    }
+  }
+
+  imm.vertex_idx++;
+  imm.vertex_data += imm.vertex_format.stride;
+  imm.unassigned_attr_bits = imm.attr_binding.enabled_bits;
+}
+
+void immVertex2f(uint attr_id, float x, float y)
+{
+  immAttr2f(attr_id, x, y);
+  immEndVertex();
+}
+
+void immVertex3f(uint attr_id, float x, float y, float z)
+{
+  immAttr3f(attr_id, x, y, z);
+  immEndVertex();
+}
+
+void immVertex4f(uint attr_id, float x, float y, float z, float w)
+{
+  immAttr4f(attr_id, x, y, z, w);
+  immEndVertex();
+}

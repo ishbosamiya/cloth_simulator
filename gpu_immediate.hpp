@@ -135,4 +135,18 @@ void immBegin(GPUPrimType prim_type, uint vertex_len);
 void immBeginAtMost(GPUPrimType prim_type, uint vertex_len);
 void immEnd();
 
+/* Provide attribute values that can change per vertex. */
+/* First vertex after immBegin must have all its attributes specified. */
+/* Skipped attributes will continue using the previous value for that attr_id. */
+void immAttr1f(uint attr_id, float x);
+void immAttr2f(uint attr_id, float x, float y);
+void immAttr3f(uint attr_id, float x, float y, float z);
+void immAttr4f(uint attr_id, float x, float y, float z, float w);
+
+/* Provide one last attribute value & end the current vertex. */
+/* This is most often used for 2D or 3D position (similar to glVertex). */
+void immVertex2f(uint attr_id, float x, float y);
+void immVertex3f(uint attr_id, float x, float y, float z);
+void immVertex4f(uint attr_id, float x, float y, float z, float w);
+
 #endif
