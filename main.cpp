@@ -37,6 +37,7 @@ float delta_time = 0.0f;
 float last_frame = 0.0f;
 
 bool simulation_pause = true;
+bool draw_cloth_mesh_velocity = false;
 
 bool draw_constraints_stretch = false;
 bool draw_constraints_bending = false;
@@ -162,7 +163,9 @@ int main()
     directional_light_shader.setMat4("view", view);
 
     mesh.draw();
-    mesh.drawVelocity(projection, view);
+    if (draw_cloth_mesh_velocity) {
+      mesh.drawVelocity(projection, view);
+    }
 
     light_shader.use();
     light_shader.setMat4("projection", projection);
@@ -230,6 +233,10 @@ void processInput(GLFWwindow *window)
   }
   else {
     simulation_pause = true;
+  }
+
+  if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) {
+    draw_cloth_mesh_velocity = !draw_cloth_mesh_velocity;
   }
 }
 
