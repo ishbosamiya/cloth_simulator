@@ -288,3 +288,47 @@ void ClothMesh::updateFaceNormals()
     faces[i]->n = normalize(normal(x0, x1, x2));
   }
 }
+
+void ClothMesh::drawVelocity(glm::mat4 &projection, glm::mat4 &view)
+{
+  static Shader smooth_shader("shaders/shader_3D_smooth_color.vert",
+                              "shaders/shader_3D_smooth_color.frag");
+  glm::mat4 model = glm::mat4(1.0);
+  smooth_shader.use();
+  smooth_shader.setMat4("projection", projection);
+  smooth_shader.setMat4("view", view);
+  smooth_shader.setMat4("model", model);
+
+  glEnable(GL_LINE_SMOOTH);
+  glLineWidth(2);
+
+  int num_nodes = nodes.size();
+
+  GPUVertFormat *format = immVertexFormat();
+  uint pos = format->addAttribute("pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
+  uint col = format->addAttribute("color", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
+
+  immBegin(GPU_PRIM_LINES, num_nodes * 2, &smooth_shader);
+
+  for (int i = 0; i < num_nodes; i++) {
+    ClothNode *node = static_cast<ClothNode *>(nodes[i]);
+
+    const Vec3 &start_pos = node->x;
+    const double speed = norm(node->v);
+    const double length_of_line = 0.04;
+    const Vec3 end_pos = start_pos + (length_of_line * node->v / speed);
+    const Vec3 color0 = Vec3(0.0, 1.0, 0.0);
+    const Vec3 color1 = Vec3(1.0, 0.0, 0.0);
+    const double max_speed = 3.0;
+    const double color_weight = clamp(speed / max_speed, 0.0, 1.0);
+    const Vec3 final_color = mix(color0, color1, color_weight);
+
+    immAttr4f(col, 0.0, 0.0, 0.0, 1.0);
+    immVertex3f(pos, start_pos[0], start_pos[1], start_pos[2]);
+
+    immAttr4f(col, final_color[0], final_color[1], final_color[2], 1.0);
+    immVertex3f(pos, end_pos[0], end_pos[1], end_pos[2]);
+  }
+
+  immEnd();
+}

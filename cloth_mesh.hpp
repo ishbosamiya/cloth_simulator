@@ -7,10 +7,12 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <glad/glad.h>
 
 #include "math.hpp"
 #include "misc.hpp"
 #include "mesh.hpp"
+#include "gpu_immediate.hpp"
 
 using namespace std;
 
@@ -157,6 +159,8 @@ class ClothMesh : public Mesh {
   }
 
   void updateFaceNormals();
+
+  void drawVelocity(glm::mat4 &projection, glm::mat4 &view);
 
   ~ClothMesh()
   {

@@ -12,7 +12,7 @@
 
 using namespace std;
 
-#define TRUST_NO_ONE 1
+#define TRUST_NO_ONE 0
 
 #define GPU_VERT_FORMAT_MAX_NAMES 63
 #define GPU_VERT_ATTR_MAX_LEN 16

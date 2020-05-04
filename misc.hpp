@@ -27,6 +27,15 @@ template<typename T> T clamp(const T &x, const T &a, const T &b)
   return min(max(x, a), b);
 }
 
+template<typename T> T mix(const T &x, const T &y, const T &a)
+{
+  return (x * (1 - a)) + (y * a);
+}
+template<typename T, typename S> T mix(const T &x, const T &y, const S &a)
+{
+  return (x * (1 - a)) + (y * a);
+}
+
 template<typename T> T min(const T &a, const T &b, const T &c)
 {
   return min(a, min(b, c));

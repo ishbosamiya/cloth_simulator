@@ -22,34 +22,6 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 void handlePinConstraints(GLFWwindow *window, Simulation *simulation, Camera *camera);
 
-void immTest(glm::mat4 &projection, glm::mat4 view)
-{
-  static Shader smooth_shader("shaders/shader_3D_smooth_color.vert",
-                              "shaders/shader_3D_smooth_color.frag");
-  glm::mat4 model = glm::mat4(1.0);
-  smooth_shader.use();
-  smooth_shader.setMat4("projection", projection);
-  smooth_shader.setMat4("view", view);
-  smooth_shader.setMat4("model", model);
-
-  GPUVertFormat *format = immVertexFormat();
-  uint pos = format->addAttribute("pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
-  uint col = format->addAttribute("color", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
-
-  immBegin(GPU_PRIM_TRIS, 3, &smooth_shader);
-
-  immAttr4f(col, 1.0, 0.0, 0.0, 1.0);
-  immVertex3f(pos, 0, 0, -1);
-
-  immAttr4f(col, 0.0, 1.0, 0.0, 1.0);
-  immVertex3f(pos, 1, 1, -1);
-
-  immAttr4f(col, 0.0, 0.0, 1.0, 1.0);
-  immVertex3f(pos, 1.5, 0, -1);
-
-  immEnd();
-}
-
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -190,6 +162,7 @@ int main()
     directional_light_shader.setMat4("view", view);
 
     mesh.draw();
+    mesh.drawVelocity(projection, view);
 
     light_shader.use();
     light_shader.setMat4("projection", projection);
@@ -216,8 +189,6 @@ int main()
     text.renderText(text_shader, fps_text, "ubuntu", 7.0, SCR_HEIGHT - 20, 0.3);
     snprintf(fps_text, 25, "avg_fps: %.2f", avg_fps);
     text.renderText(text_shader, fps_text, "ubuntu", 7.0, SCR_HEIGHT - 40, 0.3);
-
-    immTest(projection, view);
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     glfwSwapBuffers(window);
