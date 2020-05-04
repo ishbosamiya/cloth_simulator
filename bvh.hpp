@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <stack>
 
+#include "math.hpp"
+#include "gpu_immediate.hpp"
+
 using namespace std;
 
 /* Blender's kdopbvh turned into cpp version */
@@ -155,5 +158,7 @@ BVHTreeOverlap *BVHTree_overlap(const BVHTree *tree1,
                                 unsigned int *r_overlap_tot,
                                 BVHTree_OverlapCallback callback,
                                 void *userdata);
+
+void BVHTree_draw(const BVHTree *tree, glm::mat4 &projection, glm::mat4 &view, Vec4 color);
 
 #endif
