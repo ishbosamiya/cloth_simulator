@@ -11,7 +11,7 @@ endif
 
 GL_FLAGS = -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl
 LIB_FLAGS = -lfreetype
-OBJS = glad.o main.o cloth_mesh.o constraint.o simulation.o mesh.o primitives.o bvh.o collision.o math.o gpu_immediate.o
+OBJS = glad.o cloth_mesh.o constraint.o simulation.o mesh.o primitives.o bvh.o collision.o math.o gpu_immediate.o
 PROJECT_NAME = cloth_simulator
 
 ifeq (${mode}, debug)
@@ -20,16 +20,24 @@ else
 	PROJECT = ${PROJECT_NAME}
 endif
 
-${PROJECT}: ${OBJS} clean_emacs_files
+${PROJECT}: ${OBJS} main.o clean_emacs_files
 	@echo "Building on "${mode}" mode"
 	@echo ".........................."
-	${CC} ${INCLUDES} ${FLAGS} ${OBJS} -o $@ ${GL_FLAGS} ${LIB_FLAGS}
+	${CC} ${INCLUDES} ${FLAGS} ${OBJS} main.o -o $@ ${GL_FLAGS} ${LIB_FLAGS}
+	-make clean
+
+project_test: ${OBJS} main_testing.o clean_emacs_files
+	@echo "Building $@ on "${mode}" mode"
+	@echo ".........................."
+	${CC} ${INCLUDES} ${FLAGS} ${OBJS} main_testing.o -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 	-make clean
 
 glad.o:
 	${CC} -c glad.c -o $@ ${GL_FLAGS}
 main.o:
 	${CC} ${INCLUDES} ${FLAGS} -c main.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
+main_testing.o:
+	${CC} ${INCLUDES} ${FLAGS} -c main_testing.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 cloth_mesh.o:
 	${CC} ${INCLUDES} ${FLAGS} -c cloth_mesh.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 constraint.o:
@@ -51,8 +59,8 @@ gpu_immediate.o:
 
 .PHONEY: clean clean_emacs_files clean_all
 clean:
-	-rm -rf ${OBJS}
+	-rm -rf ${OBJS} main.o main_testing.o
 clean_emacs_files:
 	-rm -rf *~
 clean_all: clean clean_emacs_files
-	-rm -rf ${PROJECT_NAME} ${PROJECT_NAME}_debug
+	-rm -rf ${PROJECT_NAME} ${PROJECT_NAME}_debug project_test
