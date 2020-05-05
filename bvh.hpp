@@ -159,6 +159,11 @@ BVHTreeOverlap *BVHTree_overlap(const BVHTree *tree1,
                                 BVHTree_OverlapCallback callback,
                                 void *userdata);
 
-void BVHTree_draw(const BVHTree *tree, glm::mat4 &projection, glm::mat4 &view, Vec4 color);
+/* projection: projection matrix, generally from the camera
+ * view: view matrix, generally from the camera
+ * color: color of the bounding boxes
+ * draw_level: level of the bvh to draw */
+void BVHTree_draw(
+    const BVHTree *tree, glm::mat4 &projection, glm::mat4 &view, Vec4 color, int draw_level);
 
 #endif

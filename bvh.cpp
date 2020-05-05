@@ -956,29 +956,15 @@ static void draw_line(const Vec3 &pos1,
   immVertex3f(pos, pos2[0], pos2[1], pos2[2]);
 }
 
-void BVHTree_draw(const BVHTree *tree, glm::mat4 &projection, glm::mat4 &view, Vec4 color)
+static void recursive_draw(const BVHNode *node,
+                           const Vec4 &color,
+                           const uint pos,
+                           const uint col,
+                           char tree_type,
+                           int draw_level,
+                           int current_level = 0)
 {
-  /* Currently only drawing aabb is supported */
-  assert(tree->axis == 8);
-  static Shader smooth_shader("shaders/shader_3D_smooth_color.vert",
-                              "shaders/shader_3D_smooth_color.frag");
-  glm::mat4 model = glm::mat4(1.0);
-  smooth_shader.use();
-  smooth_shader.setMat4("projection", projection);
-  smooth_shader.setMat4("view", view);
-  smooth_shader.setMat4("model", model);
-
-  glEnable(GL_LINE_SMOOTH);
-  glLineWidth(2);
-
-  GPUVertFormat *format = immVertexFormat();
-  uint pos = format->addAttribute("pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
-  uint col = format->addAttribute("color", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
-
-  immBegin(GPU_PRIM_LINES, tree->totleaf * 12, &smooth_shader);
-
-  for (int i = 0; i < tree->totleaf; i++) {
-    const BVHNode *node = tree->nodearray + i;
+  if (current_level == draw_level) {
     const float &x0 = node->bv[(2 * 0) + 0];
     const float &x1 = node->bv[(2 * 0) + 1];
     const float &y0 = node->bv[(2 * 1) + 0];
@@ -1009,7 +995,47 @@ void BVHTree_draw(const BVHTree *tree, glm::mat4 &projection, glm::mat4 &view, V
     draw_line(v1, color, v5, color, pos, col);
     draw_line(v2, color, v6, color, pos, col);
     draw_line(v3, color, v7, color, pos, col);
+
+    /* We don't need to go below this level anyway */
+    return;
   }
+
+  /* shouldn't be a leaf node */
+  if (node->totnode) {
+    for (int i = 0; i < tree_type; i++) {
+      if (node->children[i]) {
+        recursive_draw(
+            node->children[i], color, pos, col, tree_type, draw_level, current_level + 1);
+      }
+    }
+  }
+}
+
+void BVHTree_draw(
+    const BVHTree *tree, glm::mat4 &projection, glm::mat4 &view, Vec4 color, int draw_level)
+{
+  /* Currently only drawing aabb is supported */
+  assert(tree->axis == 8);
+  static Shader smooth_shader("shaders/shader_3D_smooth_color.vert",
+                              "shaders/shader_3D_smooth_color.frag");
+  glm::mat4 model = glm::mat4(1.0);
+  smooth_shader.use();
+  smooth_shader.setMat4("projection", projection);
+  smooth_shader.setMat4("view", view);
+  smooth_shader.setMat4("model", model);
+
+  glEnable(GL_LINE_SMOOTH);
+  glLineWidth(2);
+
+  GPUVertFormat *format = immVertexFormat();
+  uint pos = format->addAttribute("pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
+  uint col = format->addAttribute("color", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
+
+  immBegin(GPU_PRIM_LINES, tree->totleaf * 12, &smooth_shader);
+
+  const BVHNode *root = tree->nodes[tree->totleaf];
+
+  recursive_draw(root, color, pos, col, tree->tree_type, draw_level);
 
   immEnd();
 }

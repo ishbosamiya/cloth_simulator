@@ -213,12 +213,11 @@ class Mesh : public Primitive {
   void buildBVH(float epsilon = 0.01);
   void updateBVH();
   void deleteBVH();
-  void drawBVH(glm::mat4 &projection, glm::mat4 &view)
+  void drawBVH(glm::mat4 &projection, glm::mat4 &view, Vec4 color, int draw_level)
   {
-    /* TODO(ish): need to add drawing functionality */
-    /* if (bvh) { */
-    /*   bvh->draw(projection, view); */
-    /* } */
+    if (bvh) {
+      BVHTree_draw(bvh, projection, view, color, draw_level);
+    }
   }
 
   void updateFaceNormals();
