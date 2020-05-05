@@ -363,7 +363,7 @@ void Mesh::buildBVH(float epsilon)
 {
   assert(bvh == NULL);
   int faces_size = faces.size();
-  bvh = BVHTree_new(faces_size, epsilon, 4, 26);
+  bvh = BVHTree_new(faces_size, epsilon, 4, 8);
 
   for (int i = 0; i < faces_size; i++) {
     float co[3][3];
