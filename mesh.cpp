@@ -28,6 +28,63 @@ Vert *Edge::getOtherVertOfFace(int face_side)
   return NULL;
 }
 
+static void connectVertWithNode(Vert *vert, Node *node);
+
+bool Edge::split(EditedElements &r_ee)
+{
+  if (this->adj_f[0] == NULL && this->adj_f[1] == NULL) {
+    /* Edge with no face, no need to split it as of right now */
+    return false;
+  }
+  /* Need to get the new Node */
+  Node *n3 = new Node((this->n[0]->x + this->n[1]->x) * 0.5);
+  r_ee.add(n3);
+
+  /* Make the new Edge */
+  Edge *e1 = new Edge(n[0], n3);
+  Edge *e2 = new Edge(n3, n[1]);
+  r_ee.add(e1);
+  r_ee.add(e2);
+
+  Vert *v3 = NULL;
+  /* Iterate for both adjacent faces to remove the face, add the newly
+   * formed edges, verts and faces */
+  for (int i = 0; i < 2; i++) {
+    Face *f = this->adj_f[i];
+    if (f == NULL) {
+      continue;
+    }
+
+    r_ee.remove(f);
+    Vert *v0 = getVert(i, i);
+    Vert *v1 = getVert(i, 1 - i);
+    Vert *v2 = getOtherVertOfFace(i);
+    Node *n0 = v0->node;
+    Node *n1 = v1->node;
+    Node *n2 = v2->node;
+
+    /* Make the new Vert only if it wasn't made already by the
+     * previous face consideration */
+    if (v3 == NULL) {
+      v3 = new Vert((v0->uv + v1->uv) * 0.5);
+      r_ee.add(v3);
+      connectVertWithNode(v3, n3);
+    }
+
+    /* Make the new Edge */
+    Edge *e3 = new Edge(n2, n3);
+    r_ee.add(e3);
+
+    /* Make the new Face */
+    Face *f0 = new Face(v0, v3, v2);
+    Face *f1 = new Face(v3, v1, v2);
+    r_ee.add(f0);
+    r_ee.add(f1);
+  }
+  r_ee.remove(this);
+  return true;
+}
+
 void Mesh::add(Vert *vert)
 {
   verts.push_back(vert);
@@ -503,4 +560,33 @@ void Mesh::deleteMesh()
   edges.shrink_to_fit();
   faces.clear();
   faces.shrink_to_fit();
+}
+
+void EditedElements::apply(Mesh &mesh)
+{
+  for (int i = 0; i < removed_faces.size(); i++) {
+    mesh.remove(removed_faces[i]);
+  }
+  for (int i = 0; i < removed_edges.size(); i++) {
+    mesh.remove(removed_edges[i]);
+  }
+  for (int i = 0; i < removed_nodes.size(); i++) {
+    mesh.remove(removed_nodes[i]);
+  }
+  for (int i = 0; i < removed_verts.size(); i++) {
+    mesh.remove(removed_verts[i]);
+  }
+
+  for (int i = 0; i < added_verts.size(); i++) {
+    mesh.add(added_verts[i]);
+  }
+  for (int i = 0; i < added_nodes.size(); i++) {
+    mesh.add(added_nodes[i]);
+  }
+  for (int i = 0; i < added_edges.size(); i++) {
+    mesh.add(added_edges[i]);
+  }
+  for (int i = 0; i < added_faces.size(); i++) {
+    mesh.add(added_faces[i]);
+  }
 }

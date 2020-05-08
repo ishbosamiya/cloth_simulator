@@ -23,6 +23,7 @@ class Node;
 class Edge;
 class Face;
 class Mesh;
+class EditedElements;
 
 /* Important to note that Node is the world space vertex which can
  * have UV space coordinates thus is split into Node and
@@ -95,6 +96,8 @@ class Edge {
   Vert *getVert(int face_side, int edge_node);
   /* Get Vert of adj_f[face_side] that is not part of this edge */
   Vert *getOtherVertOfFace(int face_side);
+
+  bool split(EditedElements &r_ee);
 };
 
 /* Stores the Face data */
@@ -233,6 +236,54 @@ class Mesh : public Primitive {
   {
     deleteMesh();
   }
+};
+
+class EditedElements {
+ public:
+  vector<Face *> removed_faces;
+  vector<Edge *> removed_edges;
+  vector<Node *> removed_nodes;
+  vector<Vert *> removed_verts;
+  vector<Face *> added_faces;
+  vector<Edge *> added_edges;
+  vector<Node *> added_nodes;
+  vector<Vert *> added_verts;
+
+  inline void remove(Face *face)
+  {
+    removed_faces.push_back(face);
+  }
+  inline void remove(Edge *edge)
+  {
+    removed_edges.push_back(edge);
+  }
+  inline void remove(Node *node)
+  {
+    removed_nodes.push_back(node);
+  }
+  inline void remove(Vert *vert)
+  {
+    removed_verts.push_back(vert);
+  }
+
+  inline void add(Face *face)
+  {
+    added_faces.push_back(face);
+  }
+  inline void add(Edge *edge)
+  {
+    added_edges.push_back(edge);
+  }
+  inline void add(Node *node)
+  {
+    added_nodes.push_back(node);
+  }
+  inline void add(Vert *vert)
+  {
+    added_verts.push_back(vert);
+  }
+
+  void apply(Mesh &mesh);
 };
 
 inline Edge *getEdge(const Node *n0, const Node *n1)
