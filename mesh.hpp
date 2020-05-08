@@ -90,6 +90,11 @@ class Edge {
     n[0] = n0;
     n[1] = n1;
   }
+
+  /* Get Vert of edge whose node matches n[edge_node] */
+  Vert *getVert(int face_side, int edge_node);
+  /* Get Vert of adj_f[face_side] that is not part of this edge */
+  Vert *getOtherVertOfFace(int face_side);
 };
 
 /* Stores the Face data */

@@ -1,5 +1,33 @@
 #include "mesh.hpp"
 
+/* Get Vert of edge whose node matches n[edge_node] */
+Vert *Edge::getVert(int face_side, int edge_node)
+{
+  if (!adj_f[face_side]) {
+    return NULL;
+  }
+  for (int i = 0; i < 3; i++) {
+    if (adj_f[face_side]->v[i]->node == n[edge_node]) {
+      return adj_f[face_side]->v[i];
+    }
+  }
+  return NULL;
+}
+
+/* Get Vert of adj_f[face_side] that is not part of this edge */
+Vert *Edge::getOtherVertOfFace(int face_side)
+{
+  if (!adj_f[face_side]) {
+    return NULL;
+  }
+  for (int i = 0; i < 3; i++) {
+    if (adj_f[face_side]->v[i]->node != n[0] && adj_f[face_side]->v[i]->node != n[1]) {
+      return adj_f[face_side]->v[i];
+    }
+  }
+  return NULL;
+}
+
 void Mesh::add(Vert *vert)
 {
   verts.push_back(vert);
