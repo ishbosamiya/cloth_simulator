@@ -38,9 +38,9 @@ float last_frame = 0.0f;
 
 bool simulation_pause = true;
 bool draw_cloth_mesh_velocity = false;
-
 bool draw_constraints_stretch = false;
 bool draw_constraints_bending = false;
+int draw_type = 0;
 
 int main()
 {
@@ -162,7 +162,21 @@ int main()
     directional_light_shader.setMat4("projection", projection);
     directional_light_shader.setMat4("view", view);
 
-    mesh.draw();
+    Vec4 wireframe_color(1.0, 1.0, 1.0, 1.0);
+    if (draw_type == 0) {
+      mesh.draw();
+    }
+    else if (draw_type == 1) {
+      mesh.draw();
+      mesh.drawWireframe(projection, view, wireframe_color);
+    }
+    else if (draw_type == 2) {
+      mesh.drawWireframe(projection, view, wireframe_color);
+    }
+    else {
+      assert(draw_type == 0 || draw_type == 1 || draw_type == 2);
+    }
+
     if (draw_cloth_mesh_velocity) {
       mesh.drawVelocity(projection, view);
     }
@@ -233,6 +247,11 @@ void processInput(GLFWwindow *window)
   }
   else {
     simulation_pause = true;
+  }
+
+  if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
+    draw_type += 1;
+    draw_type = draw_type % 3;
   }
 
   if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) {
