@@ -211,6 +211,7 @@ class Mesh : public Primitive {
 
   virtual void draw();
   void drawWireframe(glm::mat4 projection, glm::mat4 view, Vec4 color);
+  void drawFaceNormals(glm::mat4 projection, glm::mat4 view, Vec4 color, double length);
 
   virtual bool intersectionTest(const Vec3 &p, Vec3 &r_normal, double &r_distance)
   {

@@ -446,6 +446,42 @@ void Mesh::drawWireframe(glm::mat4 projection, glm::mat4 view, Vec4 color)
   immEnd();
 }
 
+void Mesh::drawFaceNormals(glm::mat4 projection, glm::mat4 view, Vec4 color, double length)
+{
+  int faces_len = faces.size();
+
+  glEnable(GL_LINE_SMOOTH);
+  glLineWidth(1.2);
+
+  GPUVertFormat *format = immVertexFormat();
+  uint pos = format->addAttribute("pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
+  uint col = format->addAttribute("color", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
+
+  static Shader smooth_shader("shaders/shader_3D_smooth_color.vert",
+                              "shaders/shader_3D_smooth_color.frag");
+  glm::mat4 model = glm::mat4(1.0);
+  model = glm::translate(model, vec3ToGlmVec3(pos));
+  model = glm::scale(model, vec3ToGlmVec3(scale));
+  smooth_shader.use();
+  smooth_shader.setMat4("projection", projection);
+  smooth_shader.setMat4("view", view);
+  smooth_shader.setMat4("model", model);
+
+  immBegin(GPU_PRIM_LINES, faces_len * 2, &smooth_shader);
+
+  for (int i = 0; i < faces_len; i++) {
+    immAttr4f(col, color[0], color[1], color[2], color[3]);
+    Vec3 x1 = (faces[i]->v[0]->node->x + faces[i]->v[1]->node->x + faces[i]->v[2]->node->x) / 3.0;
+    immVertex3f(pos, x1[0], x1[1], x1[2]);
+
+    immAttr4f(col, color[0], color[1], color[2], color[3]);
+    Vec3 x2 = x1 + (length * faces[i]->n);
+    immVertex3f(pos, x2[0], x2[1], x2[2]);
+  }
+
+  immEnd();
+}
+
 void Mesh::applyTransformation()
 {
   if (pos == Vec3(0, 0, 0) && scale == Vec3(1, 1, 1)) {
