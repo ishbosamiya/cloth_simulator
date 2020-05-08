@@ -14,6 +14,7 @@
 #include "opengl_mesh.hpp"
 #include "primitives.hpp"
 #include "bvh.hpp"
+#include "gpu_immediate.hpp"
 
 using namespace std;
 
@@ -201,6 +202,7 @@ class Mesh : public Primitive {
   void shadeSmooth();
 
   virtual void draw();
+  void drawWireframe(glm::mat4 projection, glm::mat4 view, Vec4 color);
 
   virtual bool intersectionTest(const Vec3 &p, Vec3 &r_normal, double &r_distance)
   {

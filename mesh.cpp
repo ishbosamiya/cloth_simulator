@@ -326,6 +326,41 @@ void Mesh::draw()
   gl_mesh.draw();
 }
 
+void Mesh::drawWireframe(glm::mat4 projection, glm::mat4 view, Vec4 color)
+{
+  int edge_len = edges.size();
+  glEnable(GL_LINE_SMOOTH);
+  glLineWidth(1.2);
+
+  GPUVertFormat *format = immVertexFormat();
+  uint pos = format->addAttribute("pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
+  uint col = format->addAttribute("color", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
+
+  static Shader smooth_shader("shaders/shader_3D_smooth_color.vert",
+                              "shaders/shader_3D_smooth_color.frag");
+  glm::mat4 model = glm::mat4(1.0);
+  model = glm::translate(model, vec3ToGlmVec3(pos));
+  model = glm::scale(model, vec3ToGlmVec3(scale));
+  smooth_shader.use();
+  smooth_shader.setMat4("projection", projection);
+  smooth_shader.setMat4("view", view);
+  smooth_shader.setMat4("model", model);
+
+  immBegin(GPU_PRIM_LINES, edge_len * 2, &smooth_shader);
+
+  for (int i = 0; i < edge_len; i++) {
+    immAttr4f(col, color[0], color[1], color[2], color[3]);
+    Vec3 &x1 = edges[i]->n[0]->x;
+    immVertex3f(pos, x1[0], x1[1], x1[2]);
+
+    immAttr4f(col, color[0], color[1], color[2], color[3]);
+    Vec3 &x2 = edges[i]->n[1]->x;
+    immVertex3f(pos, x2[0], x2[1], x2[2]);
+  }
+
+  immEnd();
+}
+
 void Mesh::applyTransformation()
 {
   if (pos == Vec3(0, 0, 0) && scale == Vec3(1, 1, 1)) {
