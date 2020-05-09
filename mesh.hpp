@@ -37,13 +37,12 @@ class Vert {
                                 UV space */
   Node *node;           /*reference to node of vert */
   int index;            /* position in Mesh.verts */
-  Vec3 uv;              /* UV coordinates of vert, stored as Vec3 for easier
-                         * calculation */
+  Vec2 uv;              /* UV coordinates of vert */
 
   Vert() : node(0), index(-1)
   {
   }
-  Vert(const Vec3 &uv) : uv(uv)
+  Vert(const Vec2 &uv) : uv(uv)
   {
   }
 };

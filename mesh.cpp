@@ -357,7 +357,7 @@ void Mesh::loadObj(const string &file)
     string keyword;
     linestream >> keyword;
     if (keyword == "vt") {
-      Vec3 uv;
+      Vec2 uv;
       linestream >> uv[0] >> uv[1];
       this->add(new Vert(uv));
     }
@@ -394,7 +394,7 @@ void Mesh::loadObj(const string &file)
           verts.push_back(nodes.back()->verts[0]);
         }
         else {
-          verts.push_back(new Vert(nodes.back()->x));
+          verts.push_back(new Vert(Vec2(nodes.back()->x[0], nodes.back()->x[1])));
           this->add(verts.back());
         }
       }

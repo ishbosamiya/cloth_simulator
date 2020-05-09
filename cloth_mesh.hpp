@@ -36,7 +36,7 @@ class ClothVert : public Vert {
   ClothVert() : Vert()
   {
   }
-  ClothVert(const Vec3 &uv) : Vert(uv)
+  ClothVert(const Vec2 &uv) : Vert(uv)
   {
   }
 };
