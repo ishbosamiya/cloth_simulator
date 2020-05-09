@@ -1,5 +1,10 @@
 #include "math.hpp"
 
+double norm2(const Vec2 &v, const Mat2x2 &m)
+{
+  return dot(v, m * v);
+}
+
 /* Solving Cubic Equation
  * Referenced "To Solve a Real Cubic Equation" by W. Kahan from
  * University of California, Berkley - 1989 */

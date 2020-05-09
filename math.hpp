@@ -706,6 +706,10 @@ template<typename T> T sgn(const T &x)
   return x < 0 ? -1 : 1;
 }
 
+/* Is the same as
+ * --- v.t() * m * v --- */
+double norm2(const Vec2 &v, const Mat2x2 &m);
+
 /* Solves a x^3 + b x^2 + c x + d == 0
  * Returns number of valid solutions
  * r_x is the solutions of the equation */
