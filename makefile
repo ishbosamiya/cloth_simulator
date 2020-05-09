@@ -11,7 +11,7 @@ endif
 
 GL_FLAGS = -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl
 LIB_FLAGS = -lfreetype
-OBJS = glad.o cloth_mesh.o constraint.o simulation.o mesh.o primitives.o bvh.o collision.o math.o gpu_immediate.o
+OBJS = glad.o cloth_mesh.o constraint.o simulation.o mesh.o primitives.o bvh.o collision.o math.o gpu_immediate.o adaptive_remesh.o
 PROJECT_NAME = cloth_simulator
 
 ifeq (${mode}, debug)
@@ -56,6 +56,8 @@ math.o:
 	${CC} ${INCLUDES} ${FLAGS} -c math.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 gpu_immediate.o:
 	${CC} ${INCLUDES} ${FLAGS} -c gpu_immediate.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
+adaptive_remesh.o:
+	${CC} ${INCLUDES} ${FLAGS} -c adaptive_remesh.cpp -o $@ ${GL_FLAGS} ${LIB_FLAGS}
 
 .PHONEY: clean clean_emacs_files clean_all
 clean:
