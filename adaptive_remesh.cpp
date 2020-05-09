@@ -23,7 +23,7 @@ static void maximalIndependentSetOfSplittableEdges(ClothMesh &mesh, vector<Cloth
   int edge_with_size_size = edge_with_size.size();
   r_E.reserve(edge_with_size_size);
   for (int i = 0; i < edge_with_size_size; i++) {
-    r_E[i] = edge_with_size[i].first;
+    r_E.push_back(edge_with_size[i].first);
   }
 }
 
@@ -33,7 +33,7 @@ static void getModifiedFaces(EditedElements &ee, vector<ClothFace *> &r_modified
   int r_modified_faces_size = r_modified_faces.size();
   r_modified_faces.reserve(r_modified_faces_size + added_faces_size);
   for (int i = 0; i < added_faces_size; i++) {
-    r_modified_faces[r_modified_faces_size + i] = static_cast<ClothFace *>(ee.added_faces[i]);
+    r_modified_faces.push_back(static_cast<ClothFace *>(ee.added_faces[i]));
   }
 }
 
@@ -98,7 +98,7 @@ static vector<ClothFace *> deepCopy(const vector<Face *> &faces)
   int faces_size = faces.size();
   r_faces.reserve(faces_size);
   for (int i = 0; i < faces_size; i++) {
-    r_faces[i] = static_cast<ClothFace *>(faces[i]);
+    r_faces.push_back(static_cast<ClothFace *>(faces[i]));
   }
   return r_faces;
 }
