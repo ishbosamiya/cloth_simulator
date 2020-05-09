@@ -23,6 +23,196 @@ double ClothEdge::ClothAR_size()
   return (this->adj_f[0] && this->adj_f[1]) ? size * 0.5 : size;
 }
 
+/* Get ClothVert of edge whose node matches n[edge_node] */
+ClothVert *ClothEdge::getVert(int face_side, int edge_node)
+{
+  if (!adj_f[face_side]) {
+    return NULL;
+  }
+  for (int i = 0; i < 3; i++) {
+    if (static_cast<ClothNode *>(adj_f[face_side]->v[i]->node) ==
+        static_cast<ClothNode *>(n[edge_node])) {
+      return static_cast<ClothVert *>(adj_f[face_side]->v[i]);
+    }
+  }
+  return NULL;
+}
+
+/* Get Vert of adj_f[face_side] that is not part of this edge */
+ClothVert *ClothEdge::getOtherVertOfFace(int face_side)
+{
+  if (!adj_f[face_side]) {
+    return NULL;
+  }
+  for (int i = 0; i < 3; i++) {
+    if (static_cast<ClothNode *>(adj_f[face_side]->v[i]->node) != static_cast<ClothNode *>(n[0]) &&
+        static_cast<ClothNode *>(adj_f[face_side]->v[i]->node) != static_cast<ClothNode *>(n[1])) {
+      return static_cast<ClothVert *>(adj_f[face_side]->v[i]);
+    }
+  }
+  return NULL;
+}
+
+static void connectVertWithNode(ClothVert *vert, ClothNode *node);
+
+bool ClothEdge::split(EditedElements &r_ee)
+{
+  if (this->adj_f[0] == NULL && this->adj_f[1] == NULL) {
+    /* ClothEdge with no face, no need to split it as of right now */
+    return false;
+  }
+  /* Need to get the new ClothNode */
+  ClothNode *n3 = new ClothNode((this->n[0]->x + this->n[1]->x) * 0.5);
+  r_ee.add(n3);
+
+  /* Make the new ClothEdge */
+  ClothEdge *e1 = new ClothEdge(n[0], n3);
+  ClothEdge *e2 = new ClothEdge(n3, n[1]);
+  r_ee.add(e1);
+  r_ee.add(e2);
+
+  ClothVert *v3 = NULL;
+  /* Iterate for both adjacent faces to remove the face, add the newly
+   * formed edges, verts and faces */
+  for (int i = 0; i < 2; i++) {
+    ClothFace *f = static_cast<ClothFace *>(this->adj_f[i]);
+    if (f == NULL) {
+      continue;
+    }
+
+    r_ee.remove(f);
+    ClothVert *v0 = getVert(i, i);
+    ClothVert *v1 = getVert(i, 1 - i);
+    ClothVert *v2 = getOtherVertOfFace(i);
+    ClothNode *n0 = static_cast<ClothNode *>(v0->node);
+    ClothNode *n1 = static_cast<ClothNode *>(v1->node);
+    ClothNode *n2 = static_cast<ClothNode *>(v2->node);
+
+    /* Make the new ClothVert only if it wasn't made already by the
+     * previous face consideration */
+    if (v3 == NULL) {
+      v3 = new ClothVert((v0->uv + v1->uv) * 0.5);
+      r_ee.add(v3);
+      connectVertWithNode(v3, n3);
+    }
+
+    /* Make the new ClothEdge */
+    ClothEdge *e3 = new ClothEdge(n2, n3);
+    r_ee.add(e3);
+
+    /* Make the new ClothFace */
+    ClothFace *f0 = new ClothFace(v0, v3, v2);
+    ClothFace *f1 = new ClothFace(v3, v1, v2);
+    r_ee.add(f0);
+    r_ee.add(f1);
+  }
+  r_ee.remove(this);
+  return true;
+}
+
+bool ClothEdge::collapse(int remove_index, EditedElements &r_ee)
+{
+  assert(remove_index == 0 || remove_index == 1);
+
+  ClothNode *n0 = static_cast<ClothNode *>(this->n[remove_index]);
+  ClothNode *n1 = static_cast<ClothNode *>(this->n[1 - remove_index]);
+  /* Remove n0 */
+  r_ee.remove(n0);
+
+  /* Remove all the adjacent edges to the node to be removed, in this
+   * case n0 */
+  int adj_e_size = n0->adj_e.size();
+  for (int i = 0; i < adj_e_size; i++) {
+    ClothEdge *e_adj = static_cast<ClothEdge *>(n0->adj_e[i]);
+    /* remove the adjacent edge */
+    r_ee.remove(e_adj);
+
+    /* Make a new edge only if the new edge doesn't already exist and
+     * it won't be an edge between n1 & n1 itself */
+    ClothNode *n_other = static_cast<ClothNode *>(e_adj->n[0]) == n0 ?
+                             static_cast<ClothNode *>(e_adj->n[1]) :
+                             static_cast<ClothNode *>(e_adj->n[0]);
+    if (n_other != n1 && !getEdge(n_other, n1)) {
+      ClothEdge *e_new = new ClothEdge(n1, n_other);
+      r_ee.add(e_new);
+    }
+  }
+
+  for (int i = 0; i < 2; i++) {
+    /* Get the verts with similar naming as the nodes */
+    ClothVert *v0 = getVert(i, remove_index);
+    ClothVert *v1 = getVert(i, 1 - remove_index);
+
+    /* v0 should exist and it shouldn't have be the same as the
+     * previously removed v0 */
+    if (!v0 || (i == 1 && v0 == getVert(0, remove_index))) {
+      continue;
+    }
+    /* Remove the ClothVert v0 */
+    r_ee.remove(v0);
+    /* Remove all adjacent faces to v0 */
+    int adj_f_size = v0->adj_f.size();
+    for (int j = 0; j < adj_f_size; j++) {
+      ClothFace *f = static_cast<ClothFace *>(v0->adj_f[j]);
+      r_ee.remove(f);
+      ClothVert *vs[3] = {static_cast<ClothVert *>(f->v[0]),
+                          static_cast<ClothVert *>(f->v[1]),
+                          static_cast<ClothVert *>(f->v[2])};
+      if (!is_in(v1, vs)) {
+        /* The verts of the new ClothFace made will be similar to the old
+         * face except when v1 was already part of the previous face */
+        replace(v0, v1, vs);
+        ClothFace *f_new = new ClothFace(vs[0], vs[1], vs[2]);
+        r_ee.add(f_new);
+      }
+    }
+  }
+  return true;
+}
+
+bool ClothEdge::flip(EditedElements &r_ee)
+{
+  ClothVert *v0 = getVert(0, 0);
+  if (v0 == NULL) {
+    return false;
+  }
+  ClothVert *v1 = getVert(1, 1);
+  if (v1 == NULL) {
+    return false;
+  }
+  ClothVert *v2 = getOtherVertOfFace(0);
+  if (v2 == NULL) {
+    return false;
+  }
+  ClothVert *v3 = getOtherVertOfFace(1);
+  if (v3 == NULL) {
+    return false;
+  }
+
+  /* Remove this ClothEdge */
+  r_ee.remove(this);
+
+  /* Remove adjacent ClothFaces, we no longer need to check if they exist
+   * or not because getVert() and getOtherVertOfFace() also needs
+   * there to be adjacent ClothFaces */
+  ClothFace *f0 = static_cast<ClothFace *>(this->adj_f[0]);
+  r_ee.remove(f0);
+  ClothFace *f1 = static_cast<ClothFace *>(this->adj_f[1]);
+  r_ee.remove(f1);
+
+  /* Create new ClothFaces with the correct ordering of ClothVerts */
+  ClothFace *f2 = new ClothFace(v0, v3, v2);
+  ClothFace *f3 = new ClothFace(v1, v2, v3);
+  r_ee.add(f2);
+  r_ee.add(f3);
+
+  /* Create new ClothEdge between v3 and v2 */
+  ClothEdge *edge = new ClothEdge(v3->node, v2->node);
+  r_ee.add(edge);
+
+  return true;
+}
+
 ClothVert *ClothNode::adjacent(ClothVert *other)
 {
   ClothEdge *edge = getEdge(this, static_cast<ClothNode *>(other->node));

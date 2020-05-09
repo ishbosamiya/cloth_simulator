@@ -56,6 +56,9 @@ class ClothNode : public Node {
   ClothNode() : Node()
   {
   }
+  ClothNode(const Vec3 &x) : Node(x)
+  {
+  }
   ClothNode(const Vec3 &x, const Vec3 &v) : Node(x), x0(x), v(v)
   {
   }
@@ -74,12 +77,25 @@ class ClothEdge : public Edge {
   ClothEdge() : Edge()
   {
   }
-
+  ClothEdge(Node *n0, Node *n1) : Edge(n0, n1)
+  {
+  }
   ClothEdge(ClothNode *n0, ClothNode *n1) : Edge(n0, n1)
   {
   }
 
   double ClothAR_size();
+
+  /* Get ClothVert of edge whose node matches n[edge_node] */
+  ClothVert *getVert(int face_side, int edge_node);
+  /* Get ClothVert of adj_f[face_side] that is not part of this edge */
+  ClothVert *getOtherVertOfFace(int face_side);
+
+  bool split(EditedElements &r_ee);
+  /* collapse Edge from remove_index to the other Vert/Node, thus
+   * removing the Node n[remove_index] */
+  bool collapse(int remove_index, EditedElements &r_ee);
+  bool flip(EditedElements &r_ee);
 };
 
 /* Stores the ClothFace data */
