@@ -98,6 +98,9 @@ class Edge {
   Vert *getOtherVertOfFace(int face_side);
 
   bool split(EditedElements &r_ee);
+  /* collapse Edge from remove_index to the other Vert/Node, thus
+   * removing the Node n[remove_index] */
+  bool collapse(int remove_index, EditedElements &r_ee);
 };
 
 /* Stores the Face data */

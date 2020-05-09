@@ -85,6 +85,62 @@ bool Edge::split(EditedElements &r_ee)
   return true;
 }
 
+bool Edge::collapse(int remove_index, EditedElements &r_ee)
+{
+  assert(remove_index == 0 || remove_index == 1);
+
+  Node *n0 = this->n[remove_index];
+  Node *n1 = this->n[1 - remove_index];
+  /* Remove n0 */
+  r_ee.remove(n0);
+
+  /* Remove all the adjacent edges to the node to be removed, in this
+   * case n0 */
+  int adj_e_size = n0->adj_e.size();
+  for (int i = 0; i < adj_e_size; i++) {
+    Edge *e_adj = n0->adj_e[i];
+    /* remove the adjacent edge */
+    r_ee.remove(e_adj);
+
+    /* Make a new edge only if the new edge doesn't already exist and
+     * it won't be an edge between n1 & n1 itself */
+    Node *n_other = e_adj->n[0] == n0 ? e_adj->n[1] : e_adj->n[0];
+    if (n_other != n1 && !getEdge(n_other, n1)) {
+      Edge *e_new = new Edge(n1, n_other);
+      r_ee.add(e_new);
+    }
+  }
+
+  for (int i = 0; i < 2; i++) {
+    /* Get the verts with similar naming as the nodes */
+    Vert *v0 = getVert(i, remove_index);
+    Vert *v1 = getVert(i, 1 - remove_index);
+
+    /* v0 should exist and it shouldn't have be the same as the
+     * previously removed v0 */
+    if (!v0 || (i == 1 && v0 == getVert(0, remove_index))) {
+      continue;
+    }
+    /* Remove the Vert v0 */
+    r_ee.remove(v0);
+    /* Remove all adjacent faces to v0 */
+    int adj_f_size = v0->adj_f.size();
+    for (int j = 0; j < adj_f_size; j++) {
+      Face *f = v0->adj_f[j];
+      r_ee.remove(f);
+      if (!is_in(v1, f->v)) {
+        /* The verts of the new Face made will be similar to the old
+         * face except when v1 was already part of the previous face */
+        Vert *vs[3] = {f->v[0], f->v[1], f->v[2]};
+        replace(v0, v1, vs);
+        Face *f_new = new Face(vs[0], vs[1], vs[2]);
+        r_ee.add(f_new);
+      }
+    }
+  }
+  return true;
+}
+
 void Mesh::add(Vert *vert)
 {
   verts.push_back(vert);
