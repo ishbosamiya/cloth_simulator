@@ -8,6 +8,6 @@
 
 using namespace std;
 
-void ClothAR_Remesh(ClothMesh &mesh);
+void ClothAR_StaticRemesh(ClothMesh &mesh);
 
 #endif

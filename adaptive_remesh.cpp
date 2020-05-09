@@ -146,8 +146,23 @@ static void ClothAR_collapseEdges(ClothMesh &mesh)
   }
 }
 
-void ClothAR_Remesh(ClothMesh &mesh)
+static void ClothAR_Remesh(ClothMesh &mesh)
 {
   ClothAR_splitEdges(mesh);
   ClothAR_collapseEdges(mesh);
+}
+
+static void computeStaticVertSizing(ClothMesh &mesh, double min_edge_len)
+{
+  int verts_size = mesh.verts.size();
+  for (int i = 0; i < verts_size; i++) {
+    ClothVert *vert = static_cast<ClothVert *>(mesh.verts[i]);
+    vert->sizing = Mat2x2(1.0 / sqr(min_edge_len));
+  }
+}
+
+void ClothAR_StaticRemesh(ClothMesh &mesh)
+{
+  computeStaticVertSizing(mesh, 0.1);
+  ClothAR_Remesh(mesh);
 }
