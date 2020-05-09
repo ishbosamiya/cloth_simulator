@@ -1,5 +1,28 @@
 #include "cloth_mesh.hpp"
 
+double ClothVert::ClothAR_size(ClothVert *vert)
+{
+  Vec2 Uij = this->uv - vert->uv;
+  return sqrt(norm2(Uij, this->sizing + vert->sizing) * 0.5);
+}
+
+double ClothEdge::ClothAR_size()
+{
+  ClothVert *v00 = static_cast<ClothVert *>(getVert(0, 0));
+  ClothVert *v01 = static_cast<ClothVert *>(getVert(0, 1));
+  ClothVert *v10 = static_cast<ClothVert *>(getVert(1, 0));
+  ClothVert *v11 = static_cast<ClothVert *>(getVert(1, 1));
+  double size = 0.0;
+  if (this->adj_f[0]) {
+    size += v00->ClothAR_size(v01);
+  }
+  if (this->adj_f[1]) {
+    size += v10->ClothAR_size(v11);
+  }
+
+  return (this->adj_f[0] && this->adj_f[1]) ? size * 0.5 : size;
+}
+
 void ClothMesh::add(ClothVert *vert)
 {
   verts.push_back(vert);

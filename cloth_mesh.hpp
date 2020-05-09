@@ -30,7 +30,7 @@ class ClothMesh;
 /* Stores the UV information and corresponding World Space Node */
 class ClothVert : public Vert {
  public:
-  Mat3x3 sizing; /* sizing information for the remeshing
+  Mat2x2 sizing; /* sizing information for the remeshing
                   * step */
 
   ClothVert() : Vert()
@@ -39,6 +39,8 @@ class ClothVert : public Vert {
   ClothVert(const Vec2 &uv) : Vert(uv)
   {
   }
+
+  double ClothAR_size(ClothVert *vert);
 };
 
 /* Stores the World Space coordinates */
@@ -72,6 +74,8 @@ class ClothEdge : public Edge {
   ClothEdge(ClothNode *n0, ClothNode *n1) : Edge(n0, n1)
   {
   }
+
+  double ClothAR_size();
 };
 
 /* Stores the ClothFace data */
