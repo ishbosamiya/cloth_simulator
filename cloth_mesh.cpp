@@ -23,6 +23,20 @@ double ClothEdge::ClothAR_size()
   return (this->adj_f[0] && this->adj_f[1]) ? size * 0.5 : size;
 }
 
+ClothVert *ClothNode::adjacent(ClothVert *other)
+{
+  ClothEdge *edge = getEdge(this, static_cast<ClothNode *>(other->node));
+  for (int i = 0; i < 2; i++) {
+    for (int j = 0; j < 2; j++) {
+      if (static_cast<ClothVert *>(edge->getVert(j, i)) == other) {
+        return static_cast<ClothVert *>(edge->getVert(j, 1 - i));
+      }
+    }
+  }
+
+  return NULL;
+}
+
 void ClothMesh::add(ClothVert *vert)
 {
   verts.push_back(vert);

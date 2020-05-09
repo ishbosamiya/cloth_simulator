@@ -62,6 +62,10 @@ class ClothNode : public Node {
   ClothNode(const Vec3 &x, const Vec3 &v, const Vec3 &n) : Node(x, n), x0(x), v(v)
   {
   }
+
+  /* Get ClothVert on the opposite side of this ClothNode for the ClothEdge created by this
+   * ClothNode and other->node */
+  ClothVert *adjacent(ClothVert *other);
 };
 
 /* Stores the ClothEdge data */

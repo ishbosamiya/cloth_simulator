@@ -69,6 +69,10 @@ class Node {
   {
   }
 
+  /* Get Vert on the opposite side of this Node for the Edge created by this Node
+   * and other->node */
+  Vert *adjacent(Vert *other);
+
   virtual ~Node()
   {
   }

@@ -1,5 +1,19 @@
 #include "mesh.hpp"
 
+Vert *Node::adjacent(Vert *other)
+{
+  Edge *edge = getEdge(this, other->node);
+  for (int i = 0; i < 2; i++) {
+    for (int j = 0; j < 2; j++) {
+      if (edge->getVert(j, i) == other) {
+        return edge->getVert(j, 1 - i);
+      }
+    }
+  }
+
+  return NULL;
+}
+
 /* Get Vert of edge whose node matches n[edge_node] */
 Vert *Edge::getVert(int face_side, int edge_node)
 {
