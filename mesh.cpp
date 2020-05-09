@@ -141,6 +141,49 @@ bool Edge::collapse(int remove_index, EditedElements &r_ee)
   return true;
 }
 
+bool Edge::flip(EditedElements &r_ee)
+{
+  Vert *v0 = getVert(0, 0);
+  if (v0 == NULL) {
+    return false;
+  }
+  Vert *v1 = getVert(1, 1);
+  if (v1 == NULL) {
+    return false;
+  }
+  Vert *v2 = getOtherVertOfFace(0);
+  if (v2 == NULL) {
+    return false;
+  }
+  Vert *v3 = getOtherVertOfFace(1);
+  if (v3 == NULL) {
+    return false;
+  }
+
+  /* Remove this Edge */
+  r_ee.remove(this);
+
+  /* Remove adjacent Faces, we no longer need to check if they exist
+   * or not because getVert() and getOtherVertOfFace() also needs
+   * there to be adjacent Faces */
+  Face *f0 = this->adj_f[0];
+  r_ee.remove(f0);
+  Face *f1 = this->adj_f[1];
+  r_ee.remove(f1);
+
+  /* Create new Faces with the correct ordering of Verts */
+  Face *f2 = new Face(v0, v3, v2);
+  Face *f3 = new Face(v1, v2, v3);
+  r_ee.add(f2);
+  r_ee.add(f3);
+
+  /* Create new Edge between v3 and v2 */
+  Edge *edge = new Edge(v3->node, v2->node);
+  r_ee.add(edge);
+
+  return true;
+}
+
 void Mesh::add(Vert *vert)
 {
   verts.push_back(vert);
