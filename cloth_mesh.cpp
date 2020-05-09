@@ -90,6 +90,17 @@ void ClothMesh::remove(ClothFace *face)
   }
 }
 
+bool ClothMesh::exists(const ClothEdge *edge)
+{
+  int edges_size = edges.size();
+  for (int i = 0; i < edges_size; i++) {
+    if (static_cast<ClothEdge *>(edges[i]) == edge) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static void getValidLine(istream &in, string &line)
 {
   do {

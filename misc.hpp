@@ -167,4 +167,11 @@ inline Vec3 randomUnitVector()
   return normalize(Vec3(randomZeroOne(), randomZeroOne(), randomZeroOne()));
 }
 
+template<typename T> inline vector<T> deepCopy(const vector<T> &from)
+{
+  vector<T> to;
+  copy(from.begin(), from.end(), back_inserter(to));
+  return to;
+}
+
 #endif

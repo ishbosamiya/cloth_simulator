@@ -146,6 +146,8 @@ class ClothMesh : public Mesh {
   void remove(ClothEdge *edge);
   void remove(ClothFace *face);
 
+  bool exists(const ClothEdge *edge);
+
   void loadObj(const string &file);
 
   void applyTransformation();
