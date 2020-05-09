@@ -2,7 +2,29 @@
 
 static void maximalIndependentSetOfSplittableEdges(ClothMesh &mesh, vector<ClothEdge *> &r_E)
 {
-  /* TODO(ish): get the maximal independent set of splittable edges */
+  /* Due to the check mesh.exists(e) in splitEdges(), it is possible
+   * to just return edges in decreasing order of their size */
+  int edges_size = mesh.edges.size();
+  vector<pair<ClothEdge *, double>> edge_with_size;
+  for (int i = 0; i < edges_size; i++) {
+    ClothEdge *e = static_cast<ClothEdge *>(mesh.edges[i]);
+
+    double size = e->ClothAR_size();
+    if (size > 1.0) {
+      edge_with_size.push_back(make_pair(e, size));
+    }
+  }
+
+  sort(edge_with_size.begin(),
+       edge_with_size.end(),
+       [](pair<ClothEdge *, double> a, pair<ClothEdge *, double> b) {
+         return b.second < a.second;
+       });
+  int edge_with_size_size = edge_with_size.size();
+  r_E.reserve(edge_with_size_size);
+  for (int i = 0; i < edge_with_size_size; i++) {
+    r_E[i] = edge_with_size[i].first;
+  }
 }
 
 static void getModifiedFaces(EditedElements &ee, vector<ClothFace *> &r_modified_faces)
