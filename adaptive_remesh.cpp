@@ -42,6 +42,24 @@ static void ClothAR_flipEdges(vector<ClothFace *> modified_faces, EditedElements
   /* TODO(ish): flipEdges method */
 }
 
+static void setMeanParams(ClothNode *n0, ClothNode *n1, EditedElements &ee)
+{
+  int added_verts_size = ee.added_verts.size();
+  for (int i = 0; i < added_verts_size; i++) {
+    ClothVert *vnew = static_cast<ClothVert *>(ee.added_verts[i]);
+    ClothVert *v0 = n0->adjacent(vnew);
+    ClothVert *v1 = n1->adjacent(vnew);
+
+    vnew->sizing = (v0->sizing + v1->sizing) * 0.5;
+    ClothNode *nvnew = static_cast<ClothNode *>(vnew->node);
+    ClothNode *nv0 = static_cast<ClothNode *>(v0->node);
+    ClothNode *nv1 = static_cast<ClothNode *>(v1->node);
+    nvnew->x0 = (nv0->x0 + nv1->x0) * 0.5;
+    nvnew->v = (nv0->v + nv1->v) * 0.5;
+    nvnew->mass = (nv0->mass + nv1->mass) * 0.5;
+  }
+}
+
 static void ClothAR_splitEdges(ClothMesh &mesh)
 {
   vector<ClothEdge *> E;
@@ -56,6 +74,7 @@ static void ClothAR_splitEdges(ClothMesh &mesh)
         EditedElements ee;
         e->split(ee);
         ee.apply(mesh);
+        setMeanParams(static_cast<ClothNode *>(e->n[0]), static_cast<ClothNode *>(e->n[1]), ee);
         /* TODO(ish): set sizing and other Cloth Parameters for the
          * newly created vert/node */
         /* Need to get the modified faces during the splitting
