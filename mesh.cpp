@@ -740,4 +740,13 @@ void EditedElements::deleteElements()
   for (int i = 0; i < removed_verts.size(); i++) {
     delete removed_verts[i];
   }
+  removed_faces.clear();
+  removed_edges.clear();
+  removed_nodes.clear();
+  removed_verts.clear();
+
+  added_faces.clear();
+  added_edges.clear();
+  added_nodes.clear();
+  added_verts.clear();
 }
