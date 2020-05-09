@@ -725,3 +725,19 @@ void EditedElements::apply(Mesh &mesh)
     mesh.add(added_faces[i]);
   }
 }
+
+void EditedElements::deleteElements()
+{
+  for (int i = 0; i < removed_faces.size(); i++) {
+    delete removed_faces[i];
+  }
+  for (int i = 0; i < removed_edges.size(); i++) {
+    delete removed_edges[i];
+  }
+  for (int i = 0; i < removed_nodes.size(); i++) {
+    delete removed_nodes[i];
+  }
+  for (int i = 0; i < removed_verts.size(); i++) {
+    delete removed_verts[i];
+  }
+}

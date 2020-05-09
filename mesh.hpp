@@ -289,6 +289,7 @@ class EditedElements {
   }
 
   void apply(Mesh &mesh);
+  void deleteElements();
 };
 
 inline Edge *getEdge(const Node *n0, const Node *n1)
