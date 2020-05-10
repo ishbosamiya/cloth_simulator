@@ -45,6 +45,8 @@ class Vert {
   Vert(const Vec2 &uv) : uv(uv)
   {
   }
+
+  bool isOnSeamOrBoundary();
 };
 
 /* Stores the World Space coordinates */
@@ -72,6 +74,8 @@ class Node {
   /* Get Vert on the opposite side of this Node for the Edge created by this Node
    * and other->node */
   Vert *adjacent(Vert *other);
+
+  bool isOnSeamOrBoundary();
 
   virtual ~Node()
   {
@@ -105,6 +109,8 @@ class Edge {
    * removing the Node n[remove_index] */
   bool collapse(int remove_index, EditedElements &r_ee);
   bool flip(EditedElements &r_ee);
+
+  bool isOnSeamOrBoundary();
 };
 
 /* Stores the Face data */
@@ -130,6 +136,8 @@ class Face : public Primitive {
     v[1] = v1;
     v[2] = v2;
   }
+
+  bool isOnSeamOrBoundary();
 };
 
 /* Stores the overall Mesh data */

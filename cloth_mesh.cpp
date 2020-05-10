@@ -71,7 +71,7 @@ bool ClothEdge::split(EditedElements &r_ee)
   r_ee.add(e1);
   r_ee.add(e2);
 
-  ClothVert *v3 = NULL;
+  ClothVert *v3s[2] = {NULL, NULL};
   /* Iterate for both adjacent faces to remove the face, add the newly
    * formed edges, verts and faces */
   for (int i = 0; i < 2; i++) {
@@ -90,10 +90,13 @@ bool ClothEdge::split(EditedElements &r_ee)
 
     /* Make the new ClothVert only if it wasn't made already by the
      * previous face consideration */
-    if (v3 == NULL) {
-      v3 = new ClothVert((v0->uv + v1->uv) * 0.5);
-      r_ee.add(v3);
-      connectVertWithNode(v3, n3);
+    if (i == 0 || this->isOnSeamOrBoundary()) {
+      v3s[i] = new ClothVert((v0->uv + v1->uv) * 0.5);
+      connectVertWithNode(v3s[i], n3);
+      r_ee.add(v3s[i]);
+    }
+    else {
+      v3s[i] = v3s[0];
     }
 
     /* Make the new ClothEdge */
@@ -101,8 +104,8 @@ bool ClothEdge::split(EditedElements &r_ee)
     r_ee.add(e3);
 
     /* Make the new ClothFace */
-    ClothFace *f0 = new ClothFace(v0, v3, v2);
-    ClothFace *f1 = new ClothFace(v3, v1, v2);
+    ClothFace *f0 = new ClothFace(v0, v3s[i], v2);
+    ClothFace *f1 = new ClothFace(v3s[i], v1, v2);
     r_ee.add(f0);
     r_ee.add(f1);
   }

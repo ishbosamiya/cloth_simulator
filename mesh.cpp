@@ -1,5 +1,10 @@
 #include "mesh.hpp"
 
+bool Vert::isOnSeamOrBoundary()
+{
+  return node->isOnSeamOrBoundary();
+}
+
 Vert *Node::adjacent(Vert *other)
 {
   Edge *edge = getEdge(this, other->node);
@@ -12,6 +17,17 @@ Vert *Node::adjacent(Vert *other)
   }
 
   return NULL;
+}
+
+bool Node::isOnSeamOrBoundary()
+{
+  int adj_e_size = adj_e.size();
+  for (int i = 0; i < adj_e_size; i++) {
+    if (adj_e[i]->isOnSeamOrBoundary()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /* Get Vert of edge whose node matches n[edge_node] */
@@ -60,7 +76,7 @@ bool Edge::split(EditedElements &r_ee)
   r_ee.add(e1);
   r_ee.add(e2);
 
-  Vert *v3 = NULL;
+  Vert *v3s[2] = {NULL, NULL};
   /* Iterate for both adjacent faces to remove the face, add the newly
    * formed edges, verts and faces */
   for (int i = 0; i < 2; i++) {
@@ -79,10 +95,13 @@ bool Edge::split(EditedElements &r_ee)
 
     /* Make the new Vert only if it wasn't made already by the
      * previous face consideration */
-    if (v3 == NULL) {
-      v3 = new Vert((v0->uv + v1->uv) * 0.5);
-      r_ee.add(v3);
-      connectVertWithNode(v3, n3);
+    if (i == 0 || this->isOnSeamOrBoundary()) {
+      v3s[i] = new Vert((v0->uv + v1->uv) * 0.5);
+      connectVertWithNode(v3s[i], n3);
+      r_ee.add(v3s[i]);
+    }
+    else {
+      v3s[i] = v3s[0];
     }
 
     /* Make the new Edge */
@@ -90,8 +109,8 @@ bool Edge::split(EditedElements &r_ee)
     r_ee.add(e3);
 
     /* Make the new Face */
-    Face *f0 = new Face(v0, v3, v2);
-    Face *f1 = new Face(v3, v1, v2);
+    Face *f0 = new Face(v0, v3s[i], v2);
+    Face *f1 = new Face(v3s[i], v1, v2);
     r_ee.add(f0);
     r_ee.add(f1);
   }
@@ -196,6 +215,17 @@ bool Edge::flip(EditedElements &r_ee)
   r_ee.add(edge);
 
   return true;
+}
+
+bool Edge::isOnSeamOrBoundary()
+{
+  return !adj_f[0] || !adj_f[1] || getVert(0, 0) != getVert(1, 0);
+}
+
+bool Face::isOnSeamOrBoundary()
+{
+  return adj_e[0]->isOnSeamOrBoundary() || adj_e[1]->isOnSeamOrBoundary() ||
+         adj_e[2]->isOnSeamOrBoundary();
 }
 
 void Mesh::add(Vert *vert)
