@@ -108,6 +108,7 @@ class Edge {
   Vert *getVert(int face_side, int edge_node);
   /* Get Vert of adj_f[face_side] that is not part of this edge */
   Vert *getOtherVertOfFace(int face_side);
+  Vert *getOppositeVert(int face_side);
 
   bool split(EditedElements &r_ee);
   /* collapse Edge from remove_index to the other Vert/Node, thus
