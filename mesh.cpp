@@ -1,4 +1,5 @@
 #include "mesh.hpp"
+#include "cloth_mesh.hpp"
 
 bool Vert::isOnSeamOrBoundary()
 {
@@ -741,6 +742,40 @@ void Mesh::deleteMesh()
   faces.shrink_to_fit();
 }
 
+void EditedElements::remove(ClothFace *face)
+{
+  removed_faces.push_back(static_cast<Face *>(face));
+}
+void EditedElements::remove(ClothEdge *edge)
+{
+  removed_edges.push_back(static_cast<Edge *>(edge));
+}
+void EditedElements::remove(ClothNode *node)
+{
+  removed_nodes.push_back(static_cast<Node *>(node));
+}
+void EditedElements::remove(ClothVert *vert)
+{
+  removed_verts.push_back(static_cast<Vert *>(vert));
+}
+
+void EditedElements::add(ClothFace *face)
+{
+  added_faces.push_back(static_cast<Face *>(face));
+}
+void EditedElements::add(ClothEdge *edge)
+{
+  added_edges.push_back(static_cast<Edge *>(edge));
+}
+void EditedElements::add(ClothNode *node)
+{
+  added_nodes.push_back(static_cast<Node *>(node));
+}
+void EditedElements::add(ClothVert *vert)
+{
+  added_verts.push_back(static_cast<Vert *>(vert));
+}
+
 void EditedElements::apply(Mesh &mesh)
 {
   for (int i = 0; i < removed_faces.size(); i++) {
@@ -767,6 +802,35 @@ void EditedElements::apply(Mesh &mesh)
   }
   for (int i = 0; i < added_faces.size(); i++) {
     mesh.add(added_faces[i]);
+  }
+}
+
+void EditedElements::apply(ClothMesh &mesh)
+{
+  for (int i = 0; i < removed_faces.size(); i++) {
+    mesh.remove(static_cast<ClothFace *>(removed_faces[i]));
+  }
+  for (int i = 0; i < removed_edges.size(); i++) {
+    mesh.remove(static_cast<ClothEdge *>(removed_edges[i]));
+  }
+  for (int i = 0; i < removed_nodes.size(); i++) {
+    mesh.remove(static_cast<ClothNode *>(removed_nodes[i]));
+  }
+  for (int i = 0; i < removed_verts.size(); i++) {
+    mesh.remove(static_cast<ClothVert *>(removed_verts[i]));
+  }
+
+  for (int i = 0; i < added_verts.size(); i++) {
+    mesh.add(static_cast<ClothVert *>(added_verts[i]));
+  }
+  for (int i = 0; i < added_nodes.size(); i++) {
+    mesh.add(static_cast<ClothNode *>(added_nodes[i]));
+  }
+  for (int i = 0; i < added_edges.size(); i++) {
+    mesh.add(static_cast<ClothEdge *>(added_edges[i]));
+  }
+  for (int i = 0; i < added_faces.size(); i++) {
+    mesh.add(static_cast<ClothFace *>(added_faces[i]));
   }
 }
 

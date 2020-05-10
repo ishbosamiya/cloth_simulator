@@ -24,6 +24,11 @@ class Edge;
 class Face;
 class Mesh;
 class EditedElements;
+class ClothVert;
+class ClothNode;
+class ClothEdge;
+class ClothFace;
+class ClothMesh;
 
 /* Important to note that Node is the world space vertex which can
  * have UV space coordinates thus is split into Node and
@@ -299,7 +304,17 @@ class EditedElements {
     added_verts.push_back(vert);
   }
 
+  void remove(ClothFace *face);
+  void remove(ClothEdge *edge);
+  void remove(ClothNode *node);
+  void remove(ClothVert *vert);
+  void add(ClothFace *face);
+  void add(ClothEdge *edge);
+  void add(ClothNode *node);
+  void add(ClothVert *vert);
+
   void apply(Mesh &mesh);
+  void apply(ClothMesh &mesh);
   void deleteElements();
 };
 
