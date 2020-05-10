@@ -80,8 +80,9 @@ static void ClothAR_splitEdges(ClothMesh &mesh)
         e->split(ee);
         ee.apply(mesh);
         setMeanParams(static_cast<ClothNode *>(e->n[0]), static_cast<ClothNode *>(e->n[1]), ee);
-        /* TODO(ish): set sizing and other Cloth Parameters for the
-         * newly created vert/node */
+        for (int j = 0; j < ee.removed_edges.size(); j++) {
+          exclude(static_cast<ClothEdge *>(ee.removed_edges[j]), E);
+        }
         /* Need to get the modified faces during the splitting
          * operation so that they can be flipped if needed */
         vector<ClothFace *> modified_faces;
