@@ -59,22 +59,6 @@ Vert *Edge::getOtherVertOfFace(int face_side)
   return NULL;
 }
 
-Vert *Edge::getOppositeVert(int face_side)
-{
-  if (!adj_f[face_side]) {
-    return NULL;
-  }
-
-  Node *node = n[face_side];
-  for (int i = 0; i < 3; i++) {
-    if (adj_f[face_side]->v[i]->node == node) {
-      return adj_f[face_side]->v[PREV(i)];
-    }
-  }
-
-  return NULL;
-}
-
 static void connectVertWithNode(Vert *vert, Node *node);
 
 bool Edge::split(EditedElements &r_ee)
@@ -105,7 +89,7 @@ bool Edge::split(EditedElements &r_ee)
     r_ee.remove(f);
     Vert *v0 = getVert(i, i);
     Vert *v1 = getVert(i, 1 - i);
-    Vert *v2 = getOppositeVert(i);
+    Vert *v2 = getOtherVertOfFace(i);
     Node *n0 = v0->node;
     Node *n1 = v1->node;
     Node *n2 = v2->node;
@@ -201,11 +185,11 @@ bool Edge::flip(EditedElements &r_ee)
   if (v1 == NULL) {
     return false;
   }
-  Vert *v2 = getOppositeVert(0);
+  Vert *v2 = getOtherVertOfFace(0);
   if (v2 == NULL) {
     return false;
   }
-  Vert *v3 = getOppositeVert(1);
+  Vert *v3 = getOtherVertOfFace(1);
   if (v3 == NULL) {
     return false;
   }

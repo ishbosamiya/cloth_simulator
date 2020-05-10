@@ -90,7 +90,6 @@ class ClothEdge : public Edge {
   ClothVert *getVert(int face_side, int edge_node);
   /* Get ClothVert of adj_f[face_side] that is not part of this edge */
   ClothVert *getOtherVertOfFace(int face_side);
-  ClothVert *getOppositeVert(int face_side);
 
   bool split(EditedElements &r_ee);
   /* collapse Edge from remove_index to the other Vert/Node, thus

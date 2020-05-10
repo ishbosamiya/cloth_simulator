@@ -53,22 +53,6 @@ ClothVert *ClothEdge::getOtherVertOfFace(int face_side)
   return NULL;
 }
 
-ClothVert *ClothEdge::getOppositeVert(int face_side)
-{
-  if (!adj_f[face_side]) {
-    return NULL;
-  }
-
-  ClothNode *node = static_cast<ClothNode *>(n[face_side]);
-  for (int i = 0; i < 3; i++) {
-    if (static_cast<ClothNode *>(adj_f[face_side]->v[i]->node) == node) {
-      return static_cast<ClothVert *>(adj_f[face_side]->v[PREV(i)]);
-    }
-  }
-
-  return NULL;
-}
-
 static void connectVertWithNode(ClothVert *vert, ClothNode *node);
 
 bool ClothEdge::split(EditedElements &r_ee)
@@ -99,7 +83,7 @@ bool ClothEdge::split(EditedElements &r_ee)
     r_ee.remove(f);
     ClothVert *v0 = getVert(i, i);
     ClothVert *v1 = getVert(i, 1 - i);
-    ClothVert *v2 = getOppositeVert(i);
+    ClothVert *v2 = getOtherVertOfFace(i);
     ClothNode *n0 = static_cast<ClothNode *>(v0->node);
     ClothNode *n1 = static_cast<ClothNode *>(v1->node);
     ClothNode *n2 = static_cast<ClothNode *>(v2->node);
@@ -199,11 +183,11 @@ bool ClothEdge::flip(EditedElements &r_ee)
   if (v1 == NULL) {
     return false;
   }
-  ClothVert *v2 = getOppositeVert(0);
+  ClothVert *v2 = getOtherVertOfFace(0);
   if (v2 == NULL) {
     return false;
   }
-  ClothVert *v3 = getOppositeVert(1);
+  ClothVert *v3 = getOtherVertOfFace(1);
   if (v3 == NULL) {
     return false;
   }
