@@ -220,7 +220,8 @@ bool Edge::flip(EditedElements &r_ee)
 
 bool Edge::isOnSeamOrBoundary()
 {
-  return !adj_f[0] || !adj_f[1] || getVert(0, 0) != getVert(1, 0);
+  return !adj_f[0] || !adj_f[1] || getVert(0, 0) != getVert(1, 0) ||
+         getVert(0, 1) != getVert(1, 1);
 }
 
 bool Face::isOnSeamOrBoundary()
