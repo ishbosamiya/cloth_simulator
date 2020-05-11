@@ -569,8 +569,8 @@ void Mesh::drawWireframe(glm::mat4 projection, glm::mat4 view, Vec4 color)
   static Shader smooth_shader("shaders/shader_3D_smooth_color.vert",
                               "shaders/shader_3D_smooth_color.frag");
   glm::mat4 model = glm::mat4(1.0);
-  model = glm::translate(model, vec3ToGlmVec3(pos));
-  model = glm::scale(model, vec3ToGlmVec3(scale));
+  model = glm::translate(model, vec3ToGlmVec3(this->pos));
+  model = glm::scale(model, vec3ToGlmVec3(this->scale));
   smooth_shader.use();
   smooth_shader.setMat4("projection", projection);
   smooth_shader.setMat4("view", view);
