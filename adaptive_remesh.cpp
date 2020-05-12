@@ -20,14 +20,9 @@ static void maximalIndependentSetOfSplittableEdges(ClothMesh &mesh, vector<Cloth
        [](pair<ClothEdge *, double> a, pair<ClothEdge *, double> b) {
          return b.second < a.second;
        });
-  vector<ClothNode *> selected_nodes;
   int edge_with_size_size = edge_with_size.size();
   r_E.reserve(edge_with_size_size);
   for (int i = 0; i < edge_with_size_size; i++) {
-    if (is_in(static_cast<ClothNode *>(edge_with_size[i].first->n[0]), selected_nodes) ||
-        is_in(static_cast<ClothNode *>(edge_with_size[i].first->n[1]), selected_nodes)) {
-      continue;
-    }
     r_E.push_back(edge_with_size[i].first);
   }
 }
