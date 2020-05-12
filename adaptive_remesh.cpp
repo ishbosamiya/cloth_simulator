@@ -63,9 +63,34 @@ static void setMeanParams(ClothNode *n0, ClothNode *n1, EditedElements &ee)
 static void ClothAR_splitEdges(ClothMesh &mesh)
 {
   vector<ClothEdge *> E;
+  int count = 10;
+  int previous[count];
+  for (int i = 0; i < count; i++) {
+    previous[i] = -1;
+  }
+  int loop_count = 0;
   do {
     E.clear();
     maximalIndependentSetOfSplittableEdges(mesh, E);
+    bool break_out = true;
+    for (int i = 0; i < count; i++) {
+      if (E.size() != previous[i]) {
+        break_out = false;
+      }
+    }
+    if (break_out) {
+      mesh.saveObj("temp/temp.obj");
+      return;
+    }
+    for (int i = count - 1; i > 0; i--) {
+      previous[i] = previous[i - 1];
+    }
+    previous[0] = E.size();
+    {
+      char file[64];
+      snprintf(file, 64, "temp/temp/temp_%02d.obj", loop_count);
+      mesh.saveObj(string(file));
+    }
     for (int i = 0; i < E.size(); i++) {
       ClothEdge *e = E[i];
       assert(e != NULL);
@@ -91,6 +116,7 @@ static void ClothAR_splitEdges(ClothMesh &mesh)
         ee.deleteElements();
       }
     }
+    loop_count++;
   } while (E.size() > 0);
 }
 
@@ -183,6 +209,6 @@ static void computeStaticVertSizing(ClothMesh &mesh, double min_edge_len)
 
 void ClothAR_StaticRemesh(ClothMesh &mesh)
 {
-  computeStaticVertSizing(mesh, 0.1);
+  computeStaticVertSizing(mesh, 0.01);
   ClothAR_Remesh(mesh);
 }
