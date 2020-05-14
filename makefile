@@ -6,7 +6,6 @@ ifeq (${mode}, release)
 else
 	mode = debug
 	FLAGS = -O3 -g
-	# FLAGS = -g
 endif
 
 GL_FLAGS = -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl

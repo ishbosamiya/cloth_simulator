@@ -37,9 +37,138 @@ static void getModifiedFaces(EditedElements &ee, vector<ClothFace *> &r_modified
   }
 }
 
-static void ClothAR_flipEdges(vector<ClothFace *> modified_faces, EditedElements &r_ee)
+static bool flippable(ClothEdge *e)
 {
-  /* TODO(ish): flipEdges method */
+  if (e->isOnSeamOrBoundary()) {
+    return false;
+  }
+  ClothVert *i = e->getVert(0, 0);
+  if (i == NULL) {
+    return false;
+  }
+  ClothVert *j = e->getVert(1, 1);
+  if (j == NULL) {
+    return false;
+  }
+  ClothVert *k = e->getOtherVertOfFace(0);
+  if (k == NULL) {
+    return false;
+  }
+  ClothVert *l = e->getOtherVertOfFace(1);
+  if (l == NULL) {
+    return false;
+  }
+
+  Vec2 ujk = j->uv - k->uv;
+  Vec2 uik = i->uv - k->uv;
+  Vec2 uil = i->uv - l->uv;
+  Vec2 ujl = j->uv - l->uv;
+
+  Mat2x2 Mavg = (i->sizing + j->sizing + k->sizing + l->sizing) * 0.25;
+  if (wedge(ujk, uik) * dot(uil, Mavg * ujl) + dot(ujk, Mavg * uik) * wedge(uil, ujl) < 0.0) {
+    return true;
+  }
+  return false;
+}
+
+static void maximalIndependentSetOfFlippableEdges(vector<ClothEdge *> &E_dash,
+                                                  vector<ClothEdge *> &r_E)
+{
+  vector<ClothEdge *> flippable_edges;
+  int E_dash_size = E_dash.size();
+  for (int i = 0; i < E_dash_size; i++) {
+    ClothEdge *e = E_dash[i];
+
+    if (flippable(e)) {
+      flippable_edges.push_back(e);
+    }
+  }
+  vector<ClothNode *> selected_nodes;
+  int flippable_edges_size = flippable_edges.size();
+  for (int i = 0; i < flippable_edges_size; i++) {
+    ClothEdge *e = flippable_edges[i];
+    ClothNode *n0 = static_cast<ClothNode *>(e->n[0]);
+    ClothNode *n1 = static_cast<ClothNode *>(e->n[1]);
+    if (!is_in(n0, selected_nodes) && !is_in(n1, selected_nodes)) {
+      selected_nodes.push_back(n0);
+      selected_nodes.push_back(n1);
+
+      r_E.push_back(e);
+    }
+  }
+}
+
+static void updateFlippedFaces(EditedElements &ee, vector<ClothFace *> &r_F)
+{
+  int added_faces_size = ee.added_faces.size();
+  int removed_faces_size = ee.removed_faces.size();
+  for (int i = 0; i < added_faces_size; i++) {
+    include(static_cast<ClothFace *>(ee.added_faces[i]), r_F);
+  }
+  for (int i = 0; i < removed_faces_size; i++) {
+    exclude(static_cast<ClothFace *>(ee.removed_faces[i]), r_F);
+  }
+}
+
+static bool inverted(const ClothFace *f)
+{
+  if (0.5 * wedge(f->v[1]->uv - f->v[0]->uv, f->v[2]->uv - f->v[0]->uv) <
+      numeric_limits<double>::epsilon()) {
+    return true;
+  }
+  return false;
+}
+
+static bool inverted(const EditedElements &ee)
+{
+  int added_faces_size = ee.added_faces.size();
+  for (int i = 0; i < added_faces_size; i++) {
+    ClothFace *f = static_cast<ClothFace *>(ee.added_faces[i]);
+
+    if (inverted(f)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static void ClothAR_flipEdges(ClothMesh &mesh,
+                              vector<ClothFace *> &modified_faces,
+                              EditedElements &r_ee)
+{
+  /* static int loop_count = 0; */
+  vector<ClothEdge *> E;
+  /* int count = 0; */
+  do {
+    /* { */
+    /*   char file[64]; */
+    /*   snprintf(file, 64, "temp/temp/temp_%02d.obj", loop_count++); */
+    /*   mesh.saveObj(string(file)); */
+    /*   cout << __func__ << " run " << count << endl; */
+    /* } */
+    vector<ClothEdge *> E_dash;
+    for (int i = 0; i < modified_faces.size(); i++) {
+      ClothFace *f = modified_faces[i];
+      for (int j = 0; j < 3; j++) {
+        include(static_cast<ClothEdge *>(f->adj_e[j]), E_dash);
+      }
+    }
+    E.clear();
+    maximalIndependentSetOfFlippableEdges(E_dash, E);
+    for (int i = 0; i < E.size(); i++) {
+      ClothEdge *e = E[i];
+      EditedElements ee;
+      e->flip(ee);
+      if (inverted(ee)) {
+        ee.deleteElements();
+        continue;
+      }
+      ee.apply(mesh);
+      updateFlippedFaces(ee, modified_faces);
+      ee.deleteElements();
+    }
+    /* count++; */
+  } while (E.size() > 0);
 }
 
 static void setMeanParams(ClothNode *n0, ClothNode *n1, EditedElements &ee)
@@ -111,7 +240,7 @@ static void ClothAR_splitEdges(ClothMesh &mesh)
         ee.deleteElements();
 
         /* Run flip edges on the modified faces */
-        ClothAR_flipEdges(modified_faces, ee);
+        ClothAR_flipEdges(mesh, modified_faces, ee);
         ee.apply(mesh);
         ee.deleteElements();
       }
@@ -174,7 +303,7 @@ static void ClothAR_collapseEdges(ClothMesh &mesh)
           ee.deleteElements();
 
           /* Run flip edges on the modified faces */
-          ClothAR_flipEdges(modified_faces, ee);
+          ClothAR_flipEdges(mesh, modified_faces, ee);
           ee.apply(mesh);
           ee.deleteElements();
 
@@ -209,6 +338,6 @@ static void computeStaticVertSizing(ClothMesh &mesh, double min_edge_len)
 
 void ClothAR_StaticRemesh(ClothMesh &mesh)
 {
-  computeStaticVertSizing(mesh, 0.01);
+  computeStaticVertSizing(mesh, 0.1);
   ClothAR_Remesh(mesh);
 }
