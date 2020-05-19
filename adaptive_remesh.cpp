@@ -132,9 +132,7 @@ static bool inverted(const EditedElements &ee)
   return false;
 }
 
-static void ClothAR_flipEdges(ClothMesh &mesh,
-                              vector<ClothFace *> &modified_faces,
-                              EditedElements &r_ee)
+static void ClothAR_flipEdges(ClothMesh &mesh, vector<ClothFace *> &modified_faces)
 {
   /* static int loop_count = 0; */
   vector<ClothEdge *> E;
@@ -240,9 +238,7 @@ static void ClothAR_splitEdges(ClothMesh &mesh)
         ee.deleteElements();
 
         /* Run flip edges on the modified faces */
-        ClothAR_flipEdges(mesh, modified_faces, ee);
-        ee.apply(mesh);
-        ee.deleteElements();
+        ClothAR_flipEdges(mesh, modified_faces);
       }
     }
     loop_count++;
@@ -303,10 +299,7 @@ static void ClothAR_collapseEdges(ClothMesh &mesh)
           ee.deleteElements();
 
           /* Run flip edges on the modified faces */
-          ClothAR_flipEdges(mesh, modified_faces, ee);
-          ee.apply(mesh);
-          ee.deleteElements();
-
+          ClothAR_flipEdges(mesh, modified_faces);
           no_collapse = false;
         }
       }
