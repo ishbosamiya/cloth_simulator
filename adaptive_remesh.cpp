@@ -1,5 +1,7 @@
 #include "adaptive_remesh.hpp"
 
+static int obj_num = 0;
+
 static void maximalIndependentSetOfSplittableEdges(ClothMesh &mesh, vector<ClothEdge *> &r_E)
 {
   /* Due to the check mesh.exists(e) in splitEdges(), it is possible
@@ -71,7 +73,7 @@ static bool flippable(ClothEdge *e)
   return false;
 }
 
-static void maximalIndependentSetOfFlippableEdges(vector<ClothEdge *> &E_dash,
+static void maximalIndependentSetOfFlippableEdges(const vector<ClothEdge *> &E_dash,
                                                   vector<ClothEdge *> &r_E)
 {
   vector<ClothEdge *> flippable_edges;
@@ -134,16 +136,13 @@ static bool inverted(const EditedElements &ee)
 
 static void ClothAR_flipEdges(ClothMesh &mesh, vector<ClothFace *> &modified_faces)
 {
-  /* static int loop_count = 0; */
   vector<ClothEdge *> E;
-  /* int count = 0; */
+  int count = 0;
+  static int func_count = 0;
   do {
-    /* { */
-    /*   char file[64]; */
-    /*   snprintf(file, 64, "temp/temp/temp_%02d.obj", loop_count++); */
-    /*   mesh.saveObj(string(file)); */
-    /*   cout << __func__ << " run " << count << endl; */
-    /* } */
+    {
+      cout << __func__ << " run " << func_count << " do_while: " << count << endl;
+    }
     vector<ClothEdge *> E_dash;
     for (int i = 0; i < modified_faces.size(); i++) {
       ClothFace *f = modified_faces[i];
@@ -153,19 +152,36 @@ static void ClothAR_flipEdges(ClothMesh &mesh, vector<ClothFace *> &modified_fac
     }
     E.clear();
     maximalIndependentSetOfFlippableEdges(E_dash, E);
+    cout << "mesh.edges.size(): " << mesh.edges.size() << " E_dash.size(): " << E_dash.size()
+         << " E.size(): " << E.size() << endl;
     for (int i = 0; i < E.size(); i++) {
       ClothEdge *e = E[i];
       EditedElements ee;
-      e->flip(ee);
-      if (inverted(ee)) {
+      if (e->flip(ee)) {
+        if (inverted(ee)) {
+          ee.deleteElements();
+          remove(i, E);
+          i--;
+          cout << "continued due to inverted! current E.size(): " << E.size() << endl;
+          continue;
+        }
+        ee.apply(mesh);
+        updateFlippedFaces(ee, modified_faces);
         ee.deleteElements();
-        continue;
+        {
+          char file[64];
+          snprintf(file, 64, "temp/temp/temp_%04d.obj", obj_num++);
+          mesh.saveObj(string(file));
+          cout << "saved " << obj_num - 1 << " from " << __func__ << endl;
+        }
       }
-      ee.apply(mesh);
-      updateFlippedFaces(ee, modified_faces);
-      ee.deleteElements();
+      else {
+        cout << "couldn't flip predicted flip!" << endl;
+        remove(i, E);
+        i--;
+      }
     }
-    /* count++; */
+    count++;
   } while (E.size() > 0);
 }
 
@@ -213,11 +229,12 @@ static void ClothAR_splitEdges(ClothMesh &mesh)
       previous[i] = previous[i - 1];
     }
     previous[0] = E.size();
-    {
-      char file[64];
-      snprintf(file, 64, "temp/temp/temp_%02d.obj", loop_count);
-      mesh.saveObj(string(file));
-    }
+    /* { */
+    /*   char file[64]; */
+    /*   snprintf(file, 64, "temp/temp/temp_%04d.obj", obj_num++); */
+    /*   mesh.saveObj(string(file)); */
+    /*   cout << "saved " << obj_num - 1 << " from " << __func__ << endl; */
+    /* } */
     for (int i = 0; i < E.size(); i++) {
       ClothEdge *e = E[i];
       assert(e != NULL);
@@ -236,9 +253,25 @@ static void ClothAR_splitEdges(ClothMesh &mesh)
         getModifiedFaces(ee, modified_faces);
         /* Delete removed elements from memory */
         ee.deleteElements();
+        {
+          char file[64];
+          snprintf(file, 64, "temp/temp/temp_%04d.obj", obj_num++);
+          mesh.saveObj(string(file));
+          cout << "saved " << obj_num - 1 << " from " << __func__ << " for_loop_count: " << i
+               << " do_while_count: " << loop_count << endl;
+        }
 
         /* Run flip edges on the modified faces */
+        cout << endl
+             << "before mesh.faces.size(): " << mesh.faces.size()
+             << " mesh.edges.size(): " << mesh.edges.size()
+             << " mesh.nodes.size(): " << mesh.nodes.size()
+             << " mesh.verts.size(): " << mesh.verts.size() << endl;
         ClothAR_flipEdges(mesh, modified_faces);
+        cout << "after  mesh.faces.size(): " << mesh.faces.size()
+             << " mesh.edges.size(): " << mesh.edges.size()
+             << " mesh.nodes.size(): " << mesh.nodes.size()
+             << " mesh.verts.size(): " << mesh.verts.size() << endl;
       }
     }
     loop_count++;
@@ -331,6 +364,6 @@ static void computeStaticVertSizing(ClothMesh &mesh, double min_edge_len)
 
 void ClothAR_StaticRemesh(ClothMesh &mesh)
 {
-  computeStaticVertSizing(mesh, 0.1);
+  computeStaticVertSizing(mesh, 0.01);
   ClothAR_Remesh(mesh);
 }

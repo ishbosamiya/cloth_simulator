@@ -194,7 +194,7 @@ int main()
     if (!simulation_pause) {
       simulation.update();
       /* char output_filename[512]; */
-      /* sprintf(output_filename, "/tmp/objs/obj_%03d.obj", frame_count); */
+      /* sprintf(output_filename, "/tmp/objs/obj_%04d.obj", frame_count); */
       /* mesh.saveObj(output_filename); */
     }
 

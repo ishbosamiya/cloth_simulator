@@ -55,6 +55,7 @@ ClothVert *ClothEdge::getOtherVertOfFace(int face_side)
 
 static void connectVertWithNode(ClothVert *vert, ClothNode *node);
 
+/* verts:(+1or+2) nodes:+1 edges:(+1or+2) faces: (+1or+2) */
 bool ClothEdge::split(EditedElements &r_ee)
 {
   if (this->adj_f[0] == NULL && this->adj_f[1] == NULL) {
@@ -173,8 +174,10 @@ bool ClothEdge::collapse(int remove_index, EditedElements &r_ee)
   return true;
 }
 
+/* verts: +0 nodes: +0 edges: +0 faces: +0 */
 bool ClothEdge::flip(EditedElements &r_ee)
 {
+  return false;
   ClothVert *v0 = getVert(0, 0);
   if (v0 == NULL) {
     return false;
