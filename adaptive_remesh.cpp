@@ -159,7 +159,7 @@ static void ClothAR_flipEdges(ClothMesh &mesh, vector<ClothFace *> &modified_fac
       EditedElements ee;
       if (e->flip(ee)) {
         if (inverted(ee)) {
-          ee.deleteElements();
+          ee.clear();
           remove(i, E);
           i--;
           cout << "continued due to inverted! current E.size(): " << E.size() << endl;

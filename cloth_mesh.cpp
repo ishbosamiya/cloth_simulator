@@ -177,7 +177,6 @@ bool ClothEdge::collapse(int remove_index, EditedElements &r_ee)
 /* verts: +0 nodes: +0 edges: +0 faces: +0 */
 bool ClothEdge::flip(EditedElements &r_ee)
 {
-  return false;
   ClothVert *v0 = getVert(0, 0);
   if (v0 == NULL) {
     return false;

@@ -317,6 +317,7 @@ class EditedElements {
   void apply(Mesh &mesh);
   void apply(ClothMesh &mesh);
   void deleteElements();
+  void clear();
 };
 
 inline Edge *getEdge(const Node *n0, const Node *n1)
