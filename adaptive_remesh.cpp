@@ -224,7 +224,7 @@ static void setMeanParams(ClothNode *n0, ClothNode *n1, EditedElements &ee)
 static void ClothAR_splitEdges(ClothMesh &mesh)
 {
   vector<ClothEdge *> E;
-  int count = 10;
+  int count = 30;
   int previous[count];
   for (int i = 0; i < count; i++) {
     previous[i] = -1;
@@ -241,6 +241,8 @@ static void ClothAR_splitEdges(ClothMesh &mesh)
     }
     if (break_out) {
       mesh.saveObj("temp/temp.obj");
+      cout << "warning: had to break out of " << __func__
+           << " might have been an infinite loop otherwise!" << endl;
       return;
     }
     for (int i = count - 1; i > 0; i--) {
