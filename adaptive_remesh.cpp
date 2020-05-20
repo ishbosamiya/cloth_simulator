@@ -48,7 +48,7 @@ static bool flippable(ClothEdge *e)
   if (i == NULL) {
     return false;
   }
-  ClothVert *j = e->getVert(1, 1);
+  ClothVert *j = e->getVert(0, 1);
   if (j == NULL) {
     return false;
   }
@@ -58,6 +58,14 @@ static bool flippable(ClothEdge *e)
   }
   ClothVert *l = e->getOtherVertOfFace(1);
   if (l == NULL) {
+    return false;
+  }
+
+  /* TODO(ish): This is not part of the paper "Adaptive Anisotropic
+   * Remeshing for Cloth Simulation" but it seems necessary to not get triangles
+   * with very small aspect ratios, it may be possible to remove this
+   * after implementing collapse edges completely */
+  if (k->ClothAR_size(l) > 1.0) {
     return false;
   }
 
