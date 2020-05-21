@@ -291,9 +291,64 @@ static void ClothAR_splitEdges(ClothMesh &mesh)
   } while (E.size() > 0);
 }
 
+static bool collapsibleAspectEdgeSizeCheck(ClothEdge *e, int remove_index)
+{
+  for (int i = 0; i < 2; i++) {
+    ClothVert *v0 = e->getVert(i, remove_index);
+    ClothVert *v1 = e->getVert(i, 1 - remove_index);
+    /* v0 should exist and it shouldn't have be the same as the
+     * previously removed v0 */
+    if (!v0 || (i == 1 && v0 == e->getVert(0, remove_index))) {
+      continue;
+    }
+    int adj_f_size = v0->adj_f.size();
+    for (int i = 0; i < adj_f_size; i++) {
+      const ClothFace *f = static_cast<ClothFace *>(v0->adj_f[i]);
+      ClothVert *vs[3] = {static_cast<ClothVert *>(f->v[0]),
+                          static_cast<ClothVert *>(f->v[1]),
+                          static_cast<ClothVert *>(f->v[2])};
+      if (is_in(v1, vs)) {
+        continue;
+      }
+      replace(v0, v1, vs);
+      double area = wedge(vs[1]->uv - vs[0]->uv, vs[2]->uv - vs[0]->uv) * 0.5;
+      double perimeter = norm(vs[0]->uv - vs[1]->uv) + norm(vs[1]->uv - vs[2]->uv) +
+                         norm(vs[2]->uv - vs[0]->uv);
+      double aspect_ratio = 12.0 * sqrt(3) * area / sqr(perimeter);
+      if (area < numeric_limits<double>::epsilon()) {
+        return false;
+      }
+      /* TODO(ish): make aspect min part of remeshing parameters */
+      double aspect_min = 1e-2;
+      if (aspect_ratio < aspect_min) {
+        return false;
+      }
+      for (int j = 0; j < 3; j++) {
+        double h = 0.2;
+        if (vs[j] != v1 && vs[NEXT(j)]->ClothAR_size(vs[PREV(j)]) > (1.0 - h)) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
 static bool collapsible(ClothEdge *e, int &r_remove_index)
 {
-  /* TODO(ish): check if the edges is collapsible or not */
+  for (r_remove_index = 0; r_remove_index < 2; r_remove_index++) {
+    ClothNode *n0 = static_cast<ClothNode *>(e->n[r_remove_index]); /* Node that will be removed */
+    ClothNode *n1 = static_cast<ClothNode *>(e->n[1 - r_remove_index]);
+
+    /* The node that will be removed shouldn't along be on the seam
+     * or boundary */
+    if (n0->isOnSeamOrBoundary() && !e->isOnSeamOrBoundary()) {
+      continue;
+    }
+    if (collapsibleAspectEdgeSizeCheck(e, r_remove_index)) {
+      return true;
+    }
+  }
   return false;
 }
 
@@ -377,6 +432,6 @@ static void computeStaticVertSizing(ClothMesh &mesh, double min_edge_len)
 
 void ClothAR_StaticRemesh(ClothMesh &mesh)
 {
-  computeStaticVertSizing(mesh, 0.01);
+  computeStaticVertSizing(mesh, 0.1);
   ClothAR_Remesh(mesh);
 }
