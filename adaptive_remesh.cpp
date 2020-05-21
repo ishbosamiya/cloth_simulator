@@ -402,6 +402,7 @@ static void ClothAR_collapseEdges(ClothMesh &mesh)
           /* Run flip edges on the modified faces */
           ClothAR_flipEdges(mesh, modified_faces);
           no_collapse = false;
+          break;
         }
       }
 
@@ -410,6 +411,10 @@ static void ClothAR_collapseEdges(ClothMesh &mesh)
         /* i is decremented because remove(i, F) replaces F[i] with
          * F.back() and then F.pop_back() */
         i--;
+      }
+      else {
+        /* This is to restart the for loop over F, some face might have changed */
+        break;
       }
     }
   }
