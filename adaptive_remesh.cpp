@@ -345,6 +345,8 @@ static bool collapsible(ClothEdge *e, int &r_remove_index)
     if (n0->isOnSeamOrBoundary() && !e->isOnSeamOrBoundary()) {
       continue;
     }
+    /* TODO(ish): Ensure that corners are not collapsed, but
+     * this may or may not lead to problems, will need to test */
     if (collapsibleAspectEdgeSizeCheck(e, r_remove_index)) {
       return true;
     }
@@ -379,9 +381,18 @@ static void ClothAR_collapseEdges(ClothMesh &mesh)
 {
   vector<ClothFace *> F = deepCopy(mesh.faces);
   while (F.size() > 0) {
+#if ADAPTIVE_REMESHING_DEBUG
+#  if ADAPTIVE_REMESHING_DEBUG_SAVE_OBJ_COLLAPSE
+    {
+      char file[64];
+      snprintf(file, 64, "temp/temp/temp_%04d.obj", obj_num++);
+      mesh.saveObj(string(file));
+      cout << __func__ << " saved " << obj_num - 1 << endl;
+    }
+#  endif
+#endif
     for (int i = 0; i < F.size(); i++) {
       ClothFace *f = F[i];
-
       bool no_collapse = true;
       for (int j = 0; j < 3; j++) {
         ClothEdge *e = static_cast<ClothEdge *>(f->adj_e[j]);
@@ -398,6 +409,12 @@ static void ClothAR_collapseEdges(ClothMesh &mesh)
           /* Update F with ee */
           update(ee, F);
           ee.deleteElements();
+
+#if ADAPTIVE_REMESHING_DEBUG
+#  if ADAPTIVE_REMESHING_DEBUG_PRINT_COLLAPSE
+          cout << "collapsed an edge!" << endl;
+#  endif
+#endif
 
           /* Run flip edges on the modified faces */
           ClothAR_flipEdges(mesh, modified_faces);
