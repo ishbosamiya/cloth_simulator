@@ -791,35 +791,43 @@ void Mesh::deleteMesh()
 
 void EditedElements::remove(ClothFace *face)
 {
+  assert(!is_in(static_cast<Face *>(face), removed_faces));
   removed_faces.push_back(static_cast<Face *>(face));
 }
 void EditedElements::remove(ClothEdge *edge)
 {
+  assert(!is_in(static_cast<Edge *>(edge), removed_edges));
   removed_edges.push_back(static_cast<Edge *>(edge));
 }
 void EditedElements::remove(ClothNode *node)
 {
+  assert(!is_in(static_cast<Node *>(node), removed_nodes));
   removed_nodes.push_back(static_cast<Node *>(node));
 }
 void EditedElements::remove(ClothVert *vert)
 {
+  assert(!is_in(static_cast<Vert *>(vert), removed_verts));
   removed_verts.push_back(static_cast<Vert *>(vert));
 }
 
 void EditedElements::add(ClothFace *face)
 {
+  assert(!is_in(static_cast<Face *>(face), added_faces));
   added_faces.push_back(static_cast<Face *>(face));
 }
 void EditedElements::add(ClothEdge *edge)
 {
+  assert(!is_in(static_cast<Edge *>(edge), added_edges));
   added_edges.push_back(static_cast<Edge *>(edge));
 }
 void EditedElements::add(ClothNode *node)
 {
+  assert(!is_in(static_cast<Node *>(node), added_nodes));
   added_nodes.push_back(static_cast<Node *>(node));
 }
 void EditedElements::add(ClothVert *vert)
 {
+  assert(!is_in(static_cast<Vert *>(vert), added_verts));
   added_verts.push_back(static_cast<Vert *>(vert));
 }
 
